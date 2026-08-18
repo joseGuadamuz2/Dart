@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/models/public_catalog.dart';
@@ -409,7 +410,7 @@ class _ProductCard extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          "\$${product.finalPrice.toStringAsFixed(2)}",
+                          Currency.format(product.finalPrice),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -421,7 +422,7 @@ class _ProductCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            "\$${product.price.toStringAsFixed(2)}",
+                            Currency.format(product.price),
                             style: const TextStyle(
                               decoration: TextDecoration.lineThrough,
                               color: Colors.grey,

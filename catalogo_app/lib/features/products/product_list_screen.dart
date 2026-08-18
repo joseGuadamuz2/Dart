@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/auth/auth_provider.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../companies/company_provider.dart';
 import '../products/product_model.dart';
@@ -161,7 +162,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
             leading: const Icon(Icons.shopping_bag),
             title: Text(p.name),
             subtitle: Text(
-              "\$${p.finalPrice.toStringAsFixed(2)}"
+              "${Currency.format(p.finalPrice)}"
               "${p.discountPercentage > 0 ? " (${p.discountPercentage}% off)" : ""}",
             ),
             trailing: PopupMenuButton<String>(
