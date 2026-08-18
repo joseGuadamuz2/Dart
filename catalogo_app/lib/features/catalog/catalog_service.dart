@@ -14,10 +14,16 @@ class CatalogService {
   Future<List<CatalogProduct>> getProducts(
     String companyId, {
     String? categoryId,
+    int? page,
+    int? limit,
   }) async {
     final response = await _apiClient.dio.get(
       "/catalog/$companyId/products",
-      queryParameters: {"categoryId": ?categoryId},
+      queryParameters: {
+        "categoryId": ?categoryId,
+        "page": ?page,
+        "limit": ?limit,
+      },
     );
     final List data = response.data;
     return data.map((json) => CatalogProduct.fromJson(json)).toList();

@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
 import '../../core/models/company.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../core/validators/validators.dart';
+import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_text_field.dart';
 import 'company_service.dart';
 
 class CompanyFormScreen extends StatefulWidget {
@@ -47,7 +54,7 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
       _isLoading = true;
       _error = null;
     });
-    final service = CompanyService(ApiClient());
+    final service = CompanyService(context.read<ApiClient>());
     try {
       if (_isEditing) {
         await service.update(
@@ -63,89 +70,95 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
       }
       if (mounted) context.pop();
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = AppError.from(e).message;
+        });
+      }
     }
+  }
+
+  Future<void> _copyLink() async {
+    final messenger = ScaffoldMessenger.of(context);
+    await Clipboard.setData(
+      ClipboardData(text: ApiClient.catalogUrl(widget.company!.id)),
+    );
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text(AppStrings.linkCopied)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? "Editar empresa" : "Nueva empresa")),
+      appBar: AppBar(
+        title: Text(
+          _isEditing ? AppStrings.editCompany : AppStrings.newCompany,
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
+              AppTextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: "Nombre"),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? "Requerido" : null,
+                label: AppStrings.nameLabel,
+                validator: requiredValidator,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              AppTextField(
                 controller: _whatsappController,
-                decoration: const InputDecoration(
-                  labelText: "WhatsApp (506 + 8 dígitos)",
-                  hintText: "50688888888",
-                ),
+                label: AppStrings.whatsappLabel,
+                hint: AppStrings.whatsappHint,
                 keyboardType: TextInputType.phone,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return "Requerido";
-                  if (!RegExp(r"^506\d{8}$").hasMatch(v.trim())) {
-                    return "Debe ser 506 + 8 dígitos";
-                  }
-                  return null;
-                },
+                validator: whatsappValidator,
               ),
               const SizedBox(height: 24),
               if (_isEditing) ...[
-                Divider(),
+                const Divider(),
                 const SizedBox(height: 16),
                 const Text(
-                  "Tu catálogo",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  AppStrings.yourCatalog,
+                  style: AppTextStyles.heading,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Comparte este enlace con tus clientes:",
-                  style: TextStyle(color: Colors.grey.shade600),
+                  AppStrings.shareCatalogHint,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: AppButton(
+                        label: AppStrings.share,
+                        icon: Icons.share,
+                        variant: AppButtonVariant.secondary,
                         onPressed: () async {
                           await Share.share(
-                            "Mira el catálogo de ${_nameController.text.trim()}: ${ApiClient.catalogUrl(widget.company!.id)}",
+                            AppStrings.shareCatalogText
+                                .replaceFirst(
+                                  "{name}",
+                                  _nameController.text.trim(),
+                                )
+                                .replaceFirst(
+                                  "{url}",
+                                  ApiClient.catalogUrl(widget.company!.id),
+                                ),
                           );
                         },
-                        icon: const Icon(Icons.share),
-                        label: const Text("Compartir"),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          await Clipboard.setData(
-                            ClipboardData(
-                              text: ApiClient.catalogUrl(widget.company!.id),
-                            ),
-                          );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Enlace copiado")),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.link),
-                        label: const Text("Copiar enlace"),
+                      child: AppButton(
+                        label: AppStrings.copyLink,
+                        icon: Icons.link,
+                        variant: AppButtonVariant.secondary,
+                        onPressed: _copyLink,
                       ),
                     ),
                   ],
@@ -155,16 +168,12 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                  child: Text(_error!, style: AppTextStyles.error),
                 ),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _save,
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : Text(_isEditing ? "Guardar" : "Crear"),
-                ),
+              AppButton(
+                label: _isEditing ? AppStrings.save : AppStrings.create,
+                isLoading: _isLoading,
+                onPressed: _save,
               ),
             ],
           ),

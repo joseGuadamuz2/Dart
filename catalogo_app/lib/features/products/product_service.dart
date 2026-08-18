@@ -11,10 +11,18 @@ class ProductService {
 
   ProductService(this._apiClient);
 
-  Future<List<Product>> getProducts(String companyId) async {
+  Future<List<Product>> getProducts(
+    String companyId, {
+    int? page,
+    int? limit,
+  }) async {
     final response = await _apiClient.dio.get(
       "/owner/products",
-      queryParameters: {"companyId": companyId},
+      queryParameters: {
+        "companyId": companyId,
+        "page": ?page,
+        "limit": ?limit,
+      },
     );
     final List data = response.data;
     return data.map((json) => Product.fromJson(json)).toList();

@@ -32,8 +32,13 @@ class Company {
   }
 
   Map<String, dynamic> toJson() => {
+        "id": id,
         "name": name,
         "whatsappNumber": whatsappNumber,
+        "ownerId": ownerId,
+        "licenseId": licenseId,
+        "license": license?.toJson(),
+        "isEnabled": isEnabled,
       };
 }
 
@@ -63,4 +68,12 @@ class License {
           : null,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        "id": id,
+        "name": name,
+        "maxCompanies": maxCompanies,
+        "maxProducts": maxProducts,
+        "expiresAt": expiresAt?.toIso8601String(),
+      };
 }

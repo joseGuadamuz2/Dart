@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
 import '../../core/models/category.dart';
 import '../../core/models/company.dart';
 import '../../shared/services/image_picker_service.dart';
 import '../categories/category_service.dart';
 import '../companies/company_service.dart';
+import 'presentation/widgets/product_basic_info.dart';
+import 'presentation/widgets/product_category_selector.dart';
+import 'presentation/widgets/product_images_section.dart';
+import 'presentation/widgets/product_price_section.dart';
+import 'presentation/widgets/product_submit_button.dart';
 import 'product_model.dart';
 import 'product_service.dart';
 
@@ -41,11 +49,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   List<ProductImage> _images = [];
   final List<String> _pendingImageUrls = [];
 
+  late final ApiClient _apiClient;
+
   bool get _isEditing => widget.product != null;
 
   @override
   void initState() {
     super.initState();
+    _apiClient = context.read<ApiClient>();
     final p = widget.product;
     _nameController = TextEditingController(text: p?.name ?? "");
     _priceController = TextEditingController(
@@ -77,23 +88,33 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 
   Future<void> _loadCompanies() async {
-    final companies = await CompanyService(ApiClient()).findMyCompanies();
-    setState(() {
-      _companies = companies;
-      if (_companyId == null && companies.isNotEmpty) {
-        _companyId = companies.first.id;
-      }
-    });
-    if (_companyId != null) _loadCategories();
+    try {
+      final companies = await CompanyService(_apiClient).findMyCompanies();
+      if (!mounted) return;
+      setState(() {
+        _companies = companies;
+        if (_companyId == null && companies.isNotEmpty) {
+          _companyId = companies.first.id;
+        }
+      });
+      if (_companyId != null) _loadCategories();
+    } catch (e) {
+      if (mounted) setState(() => _error = AppError.from(e).message);
+    }
   }
 
   Future<void> _loadCategories() async {
-    final categories =
-        await CategoryService(ApiClient()).findByCompany(_companyId!);
-    setState(() {
-      _categories = categories;
-      if (widget.product == null) _categoryId = null;
-    });
+    try {
+      final categories =
+          await CategoryService(_apiClient).findByCompany(_companyId!);
+      if (!mounted) return;
+      setState(() {
+        _categories = categories;
+        if (widget.product == null) _categoryId = null;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _error = AppError.from(e).message);
+    }
   }
 
   Future<void> _pickAndUpload() async {
@@ -102,33 +123,44 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _error = null;
     });
     try {
-      final url = await ImagePickerService().pickAndUpload();
+      final url = await ImagePickerService(_apiClient).pickAndUpload();
+      if (!mounted) return;
       if (_isEditing) {
         final updated =
-            await ProductService(ApiClient()).addImage(widget.product!.id, url);
-        setState(() => _images = List.of(updated.images));
+            await ProductService(_apiClient).addImage(widget.product!.id, url);
+        if (mounted) setState(() => _images = List.of(updated.images));
       } else {
         setState(() => _pendingImageUrls.add(url));
       }
     } on ImagePickCancelled {
       // sin acción
     } catch (e) {
-      setState(() => _error = "Error al subir imagen: $e");
+      if (mounted) {
+        setState(() => "${AppStrings.imageUploadError}: ${AppError.from(e).message}");
+      }
     } finally {
       if (mounted) setState(() => _uploadingImage = false);
     }
   }
 
   Future<void> _setMainImage(ProductImage image) async {
-    final updated = await ProductService(ApiClient())
-        .setMainImage(widget.product!.id, image.id);
-    setState(() => _images = List.of(updated.images));
+    try {
+      final updated = await ProductService(_apiClient)
+          .setMainImage(widget.product!.id, image.id);
+      if (mounted) setState(() => _images = List.of(updated.images));
+    } catch (e) {
+      if (mounted) setState(() => _error = AppError.from(e).message);
+    }
   }
 
   Future<void> _deleteImage(ProductImage image) async {
-    final updated = await ProductService(ApiClient())
-        .removeImage(widget.product!.id, image.id);
-    setState(() => _images = List.of(updated.images));
+    try {
+      final updated = await ProductService(_apiClient)
+          .removeImage(widget.product!.id, image.id);
+      if (mounted) setState(() => _images = List.of(updated.images));
+    } catch (e) {
+      if (mounted) setState(() => _error = AppError.from(e).message);
+    }
   }
 
   Future<void> _save() async {
@@ -152,7 +184,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       if (_categoryId != null) "categoryId": _categoryId,
       if (_pendingImageUrls.isNotEmpty) "imageUrls": _pendingImageUrls,
     };
-    final service = ProductService(ApiClient());
+    final service = ProductService(_apiClient);
     try {
       if (_isEditing) {
         await service.update(widget.product!.id, data);
@@ -161,10 +193,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       }
       if (mounted) context.pop();
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = AppError.from(e).message;
+        });
+      }
     }
   }
 
@@ -172,7 +206,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? "Editar producto" : "Nuevo producto"),
+        title: Text(_isEditing ? AppStrings.editProduct : AppStrings.newProduct),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -181,201 +215,62 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DropdownButtonFormField<String>(
-                initialValue: _companyId,
-                decoration: const InputDecoration(labelText: "Empresa"),
-                items: _companies
-                    .map((c) =>
-                        DropdownMenuItem(value: c.id, child: Text(c.name)))
-                    .toList(),
-                onChanged: (value) {
+              ProductCategorySelector(
+                companies: _companies,
+                categories: _categories,
+                companyId: _companyId,
+                categoryId: _categoryId,
+                onCompanyChanged: (value) {
                   setState(() => _companyId = value);
                   _loadCategories();
                 },
+                onCategoryChanged: (value) => setState(() => _categoryId = value),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: "Nombre"),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? "Requerido" : null,
+              ProductBasicInfo(
+                nameController: _nameController,
+                codeController: _codeController,
+                descriptionController: _descriptionController,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _priceController,
-                decoration: const InputDecoration(labelText: "Precio"),
-                keyboardType: TextInputType.number,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return "Requerido";
-                  if (double.tryParse(v.trim()) == null) return "Inválido";
-                  return null;
-                },
+              ProductPriceSection(
+                priceController: _priceController,
+                discountController: _discountController,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _discountController,
-                decoration: const InputDecoration(labelText: "Descuento (%)"),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _codeController,
-                decoration: const InputDecoration(labelText: "Código"),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(labelText: "Descripción"),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _categoryId,
-                decoration: const InputDecoration(labelText: "Categoría"),
-                items: _categories
-                    .map((c) =>
-                        DropdownMenuItem(value: c.id, child: Text(c.name)))
-                    .toList(),
-                onChanged: (value) => setState(() => _categoryId = value),
-              ),
+              const SizedBox(height: 8),
               SwitchListTile(
-                title: const Text("Disponible"),
+                title: const Text(AppStrings.availableLabel),
                 value: _isAvailable,
                 onChanged: (v) => setState(() => _isAvailable = v),
               ),
               SwitchListTile(
-                title: const Text("Destacado"),
+                title: const Text(AppStrings.featuredLabel),
                 value: _isFeatured,
                 onChanged: (v) => setState(() => _isFeatured = v),
               ),
               const SizedBox(height: 8),
-              _buildImagesSection(),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(_error!, style: const TextStyle(color: Colors.red)),
-                ),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _save,
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : Text(_isEditing ? "Guardar" : "Crear"),
-                ),
+              ProductImagesSection(
+                isEditing: _isEditing,
+                isUploading: _uploadingImage,
+                images: _images,
+                pendingImageUrls: _pendingImageUrls,
+                onUpload: _pickAndUpload,
+                onSetMain: _setMainImage,
+                onDeleteImage: _deleteImage,
+                onDeletePending: (url) =>
+                    setState(() => _pendingImageUrls.remove(url)),
+              ),
+              const SizedBox(height: 24),
+              ProductSubmitButton(
+                isEditing: _isEditing,
+                isLoading: _isLoading,
+                error: _error,
+                onPressed: _save,
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildImagesSection() {
-    final items = <Widget>[];
-
-    if (_isEditing) {
-      for (var i = 0; i < _images.length; i++) {
-        items.add(_buildImageTile(
-          url: _images[i].url,
-          isMain: _images[i].isMain,
-          mainEnabled: !_images[i].isMain,
-          onSetMain: () => _setMainImage(_images[i]),
-          onDelete: () => _deleteImage(_images[i]),
-        ));
-      }
-    } else {
-      for (final url in _pendingImageUrls) {
-        items.add(_buildImageTile(
-          url: url,
-          isMain: false,
-          onDelete: () => setState(() => _pendingImageUrls.remove(url)),
-        ));
-      }
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Fotos", style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        if (items.isNotEmpty)
-          SizedBox(
-            height: 110,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: items.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, index) => items[index],
-            ),
-          ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: _uploadingImage ? null : _pickAndUpload,
-          icon: _uploadingImage
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.add_photo_alternate),
-          label: const Text("Subir foto"),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImageTile({
-    required String url,
-    required bool isMain,
-    bool mainEnabled = false,
-    VoidCallback? onSetMain,
-    required VoidCallback onDelete,
-  }) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            url,
-            width: 100,
-            height: 100,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => Container(
-              width: 100,
-              height: 100,
-              color: Colors.grey.shade200,
-              child: const Icon(Icons.broken_image),
-            ),
-          ),
-        ),
-        if (onSetMain != null)
-          Positioned(
-            top: 4,
-            left: 4,
-            child: IconButton(
-              icon: Icon(
-                isMain ? Icons.star : Icons.star_border,
-                color: Colors.amber,
-                size: 22,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: mainEnabled ? onSetMain : null,
-            ),
-          ),
-        Positioned(
-          top: 4,
-          right: 4,
-          child: IconButton(
-            icon: const Icon(Icons.close, color: Colors.red),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            iconSize: 22,
-            onPressed: onDelete,
-          ),
-        ),
-      ],
     );
   }
 }

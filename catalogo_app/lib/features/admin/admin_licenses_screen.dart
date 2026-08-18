@@ -3,6 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
+import '../../shared/widgets/app_empty_state.dart';
+import '../../shared/widgets/app_error_view.dart';
+import '../../shared/widgets/app_loading.dart';
 import 'admin_service.dart';
 
 class AdminLicensesScreen extends StatefulWidget {
@@ -18,38 +23,44 @@ class _AdminLicensesScreenState extends State<AdminLicensesScreen> {
   @override
   void initState() {
     super.initState();
-    _future = AdminService(ApiClient()).listLicenses();
+    _future = AdminService(context.read<ApiClient>()).listLicenses();
   }
 
-  void _reload() {
+  Future<void> _reload() async {
     setState(() {
-      _future = AdminService(ApiClient()).listLicenses();
+      _future = AdminService(context.read<ApiClient>()).listLicenses();
     });
+    await _future;
   }
 
   Future<void> _createLicense() async {
+    final apiClient = context.read<ApiClient>();
     final nameCtrl = TextEditingController();
     final companiesCtrl = TextEditingController();
     final productsCtrl = TextEditingController();
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text("Crear licencia"),
+        title: const Text(AppStrings.createLicense),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: "Nombre"),
+              decoration: const InputDecoration(labelText: AppStrings.nameLabel),
             ),
             TextField(
               controller: companiesCtrl,
-              decoration: const InputDecoration(labelText: "Máx. empresas"),
+              decoration: const InputDecoration(
+                labelText: AppStrings.maxCompaniesLabel,
+              ),
               keyboardType: TextInputType.number,
             ),
             TextField(
               controller: productsCtrl,
-              decoration: const InputDecoration(labelText: "Máx. productos"),
+              decoration: const InputDecoration(
+                labelText: AppStrings.maxProductsLabel,
+              ),
               keyboardType: TextInputType.number,
             ),
           ],
@@ -57,22 +68,22 @@ class _AdminLicensesScreenState extends State<AdminLicensesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("Cancelar"),
+            child: const Text(AppStrings.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text("Crear"),
+            child: const Text(AppStrings.create),
           ),
         ],
       ),
     );
     if (result == true) {
-      await AdminService(ApiClient()).createLicense({
+      await AdminService(apiClient).createLicense({
         "name": nameCtrl.text.trim(),
         "maxCompanies": int.tryParse(companiesCtrl.text.trim()) ?? 1,
         "maxProducts": int.tryParse(productsCtrl.text.trim()) ?? 1,
       });
-      _reload();
+      if (mounted) _reload();
     }
   }
 
@@ -80,10 +91,11 @@ class _AdminLicensesScreenState extends State<AdminLicensesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Licencias"),
+        title: const Text(AppStrings.adminLicenses),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: AppStrings.logout,
             onPressed: () => context.read<AuthProvider>().logout(),
           ),
         ],
@@ -96,25 +108,38 @@ class _AdminLicensesScreenState extends State<AdminLicensesScreen> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppLoading();
           }
           if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
+            return AppErrorView(
+              message: AppError.from(snapshot.error!).message,
+              onRetry: _reload,
+            );
           }
           final licenses = snapshot.data ?? [];
-          return ListView.separated(
-            itemCount: licenses.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final l = licenses[index];
-              return ListTile(
-                leading: const Icon(Icons.verified_user),
-                title: Text(l["name"] ?? ""),
-                subtitle: Text(
-                  "Empresas: ${l["maxCompanies"]} · Productos: ${l["maxProducts"]}",
-                ),
-              );
-            },
+          if (licenses.isEmpty) {
+            return const AppEmptyState(
+              icon: Icons.verified_user,
+              title: AppStrings.adminLicenses,
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: _reload,
+            child: ListView.separated(
+              itemCount: licenses.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final l = licenses[index];
+                return ListTile(
+                  leading: const Icon(Icons.verified_user),
+                  title: Text(l["name"] ?? ""),
+                  subtitle: Text(
+                    "${AppStrings.maxCompaniesLabel}: ${l["maxCompanies"]} · "
+                    "${AppStrings.maxProductsLabel}: ${l["maxProducts"]}",
+                  ),
+                );
+              },
+            ),
           );
         },
       ),

@@ -4,10 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../core/auth/auth_provider.dart';
 import '../../core/api/api_client.dart';
+import '../../core/auth/auth_provider.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/models/company.dart';
-import 'company_service.dart';
+import '../companies/company_provider.dart';
+import '../../shared/widgets/app_dialog.dart';
+import '../../shared/widgets/app_empty_state.dart';
+import '../../shared/widgets/app_error_view.dart';
+import '../../shared/widgets/app_loading.dart';
 
 class CompanyListScreen extends StatefulWidget {
   const CompanyListScreen({super.key});
@@ -17,114 +22,131 @@ class CompanyListScreen extends StatefulWidget {
 }
 
 class _CompanyListScreenState extends State<CompanyListScreen> {
-  late Future<List<Company>> _future;
-
   @override
   void initState() {
     super.initState();
-    _future = CompanyService(ApiClient()).findMyCompanies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CompanyProvider>().load();
+    });
   }
 
-  void _reload() {
-    setState(() {
-      _future = CompanyService(ApiClient()).findMyCompanies();
-    });
+  Future<void> _deleteCompany(Company company) async {
+    final provider = context.read<CompanyProvider>();
+    final confirmed = await confirmAction(
+      context,
+      title: AppStrings.deleteCompanyTitle,
+      message: AppStrings.deleteCompanyMessage,
+    );
+    if (!confirmed) return;
+    await provider.delete(company.id);
+  }
+
+  Future<void> _copyLink(Company company) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await Clipboard.setData(ClipboardData(text: ApiClient.catalogUrl(company.id)));
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text(AppStrings.linkCopied)));
+  }
+
+  Future<void> _onMenuSelected(Company company, String value) async {
+    switch (value) {
+      case "edit":
+        final provider = context.read<CompanyProvider>();
+        await context.push("/companies/${company.id}/edit", extra: company);
+        if (context.mounted) provider.refresh();
+      case "catalog":
+        await context.push("/public-catalog/${company.id}", extra: company.name);
+      case "share":
+        await Share.share(
+          AppStrings.shareCatalogText
+              .replaceFirst("{name}", company.name)
+              .replaceFirst("{url}", ApiClient.catalogUrl(company.id)),
+        );
+      case "copy":
+        await _copyLink(company);
+      case "delete":
+        await _deleteCompany(company);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<CompanyProvider>();
+    final companies = provider.companies;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Mis empresas"),
+        title: const Text(AppStrings.companiesTitle),
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: () {
-            context.read<AuthProvider>().logout();
-          }),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: AppStrings.logout,
+            onPressed: () => context.read<AuthProvider>().logout(),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          final provider = context.read<CompanyProvider>();
           await context.push("/companies/new");
-          _reload();
+          if (context.mounted) provider.refresh();
         },
         child: const Icon(Icons.add),
       ),
-      body: FutureBuilder<List<Company>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-          final companies = snapshot.data ?? [];
-          if (companies.isEmpty) {
-            return const Center(child: Text("No tienes empresas creadas"));
-          }
-          return ListView.separated(
-            itemCount: companies.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final c = companies[index];
-              return ListTile(
-                leading: const Icon(Icons.store),
-                title: Text(c.name),
-                subtitle: Text("WhatsApp: ${c.whatsappNumber}"),
-                isThreeLine: false,
-                trailing: PopupMenuButton<String>(
-                  onSelected: (value) async {
-                    if (value == "edit") {
-                      await context.push("/companies/${c.id}/edit", extra: c);
-                      _reload();
-                    } else if (value == "catalog") {
-                      await context.push(
-                        "/public-catalog/${c.id}",
-                        extra: c.name,
-                      );
-                    } else if (value == "share") {
-                      await Share.share(
-                        "Mira el catálogo de ${c.name}: ${ApiClient.catalogUrl(c.id)}",
-                      );
-                    } else if (value == "copy") {
-                      await Clipboard.setData(
-                        ClipboardData(text: ApiClient.catalogUrl(c.id)),
-                      );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Enlace copiado")),
-                        );
-                      }
-                    } else if (value == "delete") {
-                      await CompanyService(ApiClient()).delete(c.id);
-                      _reload();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: "edit",
-                      child: Text("Editar"),
-                    ),
-                    const PopupMenuItem(
-                      value: "catalog",
-                      child: Text("Ver catálogo"),
-                    ),
-                    const PopupMenuItem(
-                      value: "share",
-                      child: Text("Compartir catálogo"),
-                    ),
-                    const PopupMenuItem(
-                      value: "copy",
-                      child: Text("Copiar enlace"),
-                    ),
-                    const PopupMenuItem(
-                      value: "delete",
-                      child: Text("Eliminar"),
-                    ),
-                  ],
+      body: _buildBody(provider, companies),
+    );
+  }
+
+  Widget _buildBody(CompanyProvider provider, List<Company> companies) {
+    if (provider.isLoading && companies.isEmpty) {
+      return const AppLoading();
+    }
+    if (companies.isEmpty) {
+      if (provider.error != null) {
+        return AppErrorView(
+          message: provider.error!,
+          onRetry: () => context.read<CompanyProvider>().refresh(),
+        );
+      }
+      return const AppEmptyState(
+        icon: Icons.store,
+        title: AppStrings.noCompanies,
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: () => context.read<CompanyProvider>().refresh(),
+      child: ListView.separated(
+        itemCount: companies.length,
+        separatorBuilder: (_, _) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final c = companies[index];
+          return ListTile(
+            leading: const Icon(Icons.store),
+            title: Text(c.name),
+            subtitle: Text("${AppStrings.whatsAppPrefix}${c.whatsappNumber}"),
+            trailing: PopupMenuButton<String>(
+              onSelected: (value) => _onMenuSelected(c, value),
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: "edit", child: Text(AppStrings.edit)),
+                PopupMenuItem(
+                  value: "catalog",
+                  child: Text(AppStrings.viewPublicCatalog),
                 ),
-              );
-            },
+                PopupMenuItem(
+                  value: "share",
+                  child: Text(AppStrings.shareCatalog),
+                ),
+                PopupMenuItem(
+                  value: "copy",
+                  child: Text(AppStrings.copyLink),
+                ),
+                PopupMenuItem(
+                  value: "delete",
+                  child: Text(AppStrings.delete),
+                ),
+              ],
+            ),
           );
         },
       ),

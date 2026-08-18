@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
 import '../../core/models/public_catalog.dart';
+import '../../shared/widgets/app_empty_state.dart';
+import '../../shared/widgets/app_error_view.dart';
 import '../../shared/widgets/skeleton.dart';
 import 'catalog_service.dart';
 
@@ -33,9 +38,9 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
   @override
   void initState() {
     super.initState();
-    _future = CatalogService(ApiClient()).getCompanyCatalog(widget.companyId);
-    _productsFuture =
-        CatalogService(ApiClient()).getProducts(widget.companyId);
+    final service = CatalogService(context.read<ApiClient>());
+    _future = service.getCompanyCatalog(widget.companyId);
+    _productsFuture = service.getProducts(widget.companyId);
   }
 
   @override
@@ -47,7 +52,7 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
   void _selectCategory(String? categoryId) {
     setState(() {
       _categoryId = categoryId;
-      _productsFuture = CatalogService(ApiClient())
+      _productsFuture = CatalogService(context.read<ApiClient>())
           .getProducts(widget.companyId, categoryId: categoryId);
     });
   }
@@ -74,7 +79,7 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
-            tooltip: "Descargar PDF",
+            tooltip: AppStrings.downloadPdf,
             onPressed: _openPdf,
           ),
         ],
@@ -86,7 +91,9 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
             return const _CatalogSkeleton();
           }
           if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
+            return AppErrorView(
+              message: AppError.from(snapshot.error!).message,
+            );
           }
           final catalog = snapshot.data!;
           return Column(
@@ -104,7 +111,7 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
                           setState(() => _searchQuery = value.trim()),
                       decoration: const InputDecoration(
                         prefixIcon: Icon(Icons.search),
-                        hintText: "Buscar productos",
+                        hintText: AppStrings.searchProducts,
                         isDense: true,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -117,7 +124,7 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
                       child: Row(
                         children: [
                           ChoiceChip(
-                            label: const Text("Todos"),
+                            label: const Text(AppStrings.all),
                             selected: _categoryId == null,
                             onSelected: (_) => _selectCategory(null),
                           ),
@@ -145,7 +152,9 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
                       return const _ProductsSkeleton();
                     }
                     if (snap.hasError) {
-                      return Center(child: Text("Error: ${snap.error}"));
+                      return AppErrorView(
+                        message: AppError.from(snap.error!).message,
+                      );
                     }
                     var products = snap.data ?? [];
                     if (_searchQuery.isNotEmpty) {
@@ -155,7 +164,10 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
                           .toList();
                     }
                     if (products.isEmpty) {
-                      return const Center(child: Text("Sin productos"));
+                      return const AppEmptyState(
+                        icon: Icons.shopping_bag,
+                        title: AppStrings.noProducts,
+                      );
                     }
                     return GridView.builder(
                       padding: const EdgeInsets.all(16),
@@ -363,7 +375,7 @@ class _ProductCard extends StatelessWidget {
                         color: Colors.black54,
                         child: const Center(
                           child: Text(
-                            "Agotado",
+                            AppStrings.outOfStock,
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -432,17 +444,27 @@ class _ProductCard extends StatelessWidget {
                               ClipboardData(text: product.whatsappLink),
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Enlace copiado")),
+                              const SnackBar(
+                                content: Text(AppStrings.linkCopied),
+                              ),
                             );
                           },
                         ),
                         IconButton(
                           visualDensity: VisualDensity.compact,
                           icon: const Icon(Icons.share, size: 20),
-                          tooltip: "Compartir producto",
+                          tooltip: AppStrings.shareProduct,
                           onPressed: () {
                             Share.share(
-                              "Mira ${product.name}: ${ApiClient.productUrl(companyId, product.id)}",
+                              AppStrings.shareProductText
+                                  .replaceFirst("{name}", product.name)
+                                  .replaceFirst(
+                                    "{url}",
+                                    ApiClient.productUrl(
+                                      companyId,
+                                      product.id,
+                                    ),
+                                  ),
                             );
                           },
                         ),

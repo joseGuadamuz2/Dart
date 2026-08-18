@@ -6,7 +6,8 @@ import '../../features/products/product_service.dart';
 class ImagePickerService {
   final ProductService _productService;
 
-  ImagePickerService() : _productService = ProductService(ApiClient());
+  ImagePickerService(ApiClient apiClient)
+      : _productService = ProductService(apiClient);
 
   Future<XFile?> pickImage() {
     return ImagePicker().pickImage(

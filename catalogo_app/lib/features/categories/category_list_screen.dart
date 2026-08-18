@@ -3,11 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/auth/auth_provider.dart';
-import '../../core/api/api_client.dart';
-import '../../core/models/category.dart';
-import '../../core/models/company.dart';
-import '../companies/company_service.dart';
-import 'category_service.dart';
+import '../../core/constants/app_strings.dart';
+import '../companies/company_provider.dart';
+import '../categories/category_provider.dart';
+import '../../shared/widgets/app_dialog.dart';
+import '../../shared/widgets/app_empty_state.dart';
+import '../../shared/widgets/app_error_view.dart';
+import '../../shared/widgets/app_loading.dart';
 
 class CategoryListScreen extends StatefulWidget {
   const CategoryListScreen({super.key, this.initialCompanyId});
@@ -19,147 +21,169 @@ class CategoryListScreen extends StatefulWidget {
 }
 
 class _CategoryListScreenState extends State<CategoryListScreen> {
-  List<Company> _companies = [];
   String? _companyId;
-  List<Category>? _categories;
-  bool _loadingCompanies = true;
-  bool _loadingCategories = false;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _loadCompanies();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _init());
   }
 
-  Future<void> _loadCompanies() async {
-    try {
-      final companies = await CompanyService(ApiClient()).findMyCompanies();
-      setState(() {
-        _companies = companies;
-        _loadingCompanies = false;
-        if (companies.isNotEmpty) {
-          _companyId = widget.initialCompanyId != null &&
-                  companies.any((c) => c.id == widget.initialCompanyId)
-              ? widget.initialCompanyId
-              : companies.first.id;
-        }
-      });
-      if (companies.isNotEmpty) _loadCategories();
-    } catch (e) {
-      setState(() {
-        _loadingCompanies = false;
-        _error = e.toString();
-      });
+  Future<void> _init() async {
+    final companyProvider = context.read<CompanyProvider>();
+    if (companyProvider.companies.isEmpty && !companyProvider.isLoading) {
+      await companyProvider.load();
+    }
+    if (!mounted) return;
+    final companies = companyProvider.companies;
+    if (companies.isNotEmpty) {
+      final id = widget.initialCompanyId != null &&
+              companies.any((c) => c.id == widget.initialCompanyId)
+          ? widget.initialCompanyId
+          : companies.first.id;
+      _selectCompany(id);
     }
   }
 
-  Future<void> _loadCategories() async {
-    if (_companyId == null) {
-      setState(() => _categories = []);
-      return;
+  void _selectCompany(String? id) {
+    setState(() => _companyId = id);
+    if (id != null) {
+      context.read<CategoryProvider>().loadForCompany(id);
     }
-    setState(() {
-      _loadingCategories = true;
-      _error = null;
-    });
-    try {
-      final categories =
-          await CategoryService(ApiClient()).findByCompany(_companyId!);
-      setState(() {
-        _categories = categories;
-        _loadingCategories = false;
-      });
-    } catch (e) {
-      setState(() {
-        _loadingCategories = false;
-        _error = e.toString();
-      });
-    }
+  }
+
+  Future<void> _deleteCategory(String id) async {
+    final provider = context.read<CategoryProvider>();
+    final confirmed = await confirmAction(
+      context,
+      title: AppStrings.deleteCategoryTitle,
+      message: AppStrings.deleteCategoryMessage,
+    );
+    if (!confirmed) return;
+    await provider.delete(id);
   }
 
   @override
   Widget build(BuildContext context) {
+    final companyProvider = context.watch<CompanyProvider>();
+    final companies = companyProvider.companies;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Categorías"),
+        title: const Text(AppStrings.categoriesTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: AppStrings.logout,
             onPressed: () => context.read<AuthProvider>().logout(),
           ),
         ],
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: DropdownButtonFormField<String>(
-              initialValue: _companyId,
-              decoration: const InputDecoration(labelText: "Empresa"),
-              items: _companies
-                  .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
-                  .toList(),
-              onChanged: (value) {
-                setState(() => _companyId = value);
-                _loadCategories();
-              },
+          if (companies.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: DropdownButtonFormField<String>(
+                initialValue: _companyId,
+                decoration: const InputDecoration(
+                  labelText: AppStrings.companyLabel,
+                ),
+                items: companies
+                    .map((c) =>
+                        DropdownMenuItem(value: c.id, child: Text(c.name)))
+                    .toList(),
+                onChanged: _selectCompany,
+              ),
             ),
-          ),
-          Expanded(
-            child: _buildBody(),
-          ),
+          Expanded(child: _buildBody(companyProvider)),
         ],
       ),
       floatingActionButton: _companyId == null
           ? null
           : FloatingActionButton(
               onPressed: () async {
+                final provider = context.read<CategoryProvider>();
                 await context.push("/categories/new", extra: _companyId);
-                _loadCategories();
+                if (context.mounted) provider.refresh();
               },
               child: const Icon(Icons.add),
             ),
     );
   }
 
-  Widget _buildBody() {
-    if (_loadingCompanies || _loadingCategories) {
-      return const Center(child: CircularProgressIndicator());
+  Widget _buildBody(CompanyProvider companyProvider) {
+    if (companyProvider.isLoading && companyProvider.companies.isEmpty) {
+      return const AppLoading();
     }
-    if (_error != null) return Center(child: Text("Error: $_error"));
+    if (companyProvider.companies.isEmpty) {
+      if (companyProvider.error != null) {
+        return AppErrorView(message: companyProvider.error!, onRetry: _init);
+      }
+      return const AppEmptyState(
+        icon: Icons.store,
+        title: AppStrings.noCompanies,
+      );
+    }
     if (_companyId == null) {
-      return const Center(child: Text("Selecciona una empresa"));
+      return const AppEmptyState(
+        icon: Icons.category,
+        title: AppStrings.selectCompany,
+      );
     }
-    final categories = _categories ?? [];
+
+    final categoryProvider = context.watch<CategoryProvider>();
+    if (categoryProvider.isLoading && categoryProvider.categories.isEmpty) {
+      return const AppLoading();
+    }
+    if (categoryProvider.error != null &&
+        categoryProvider.categories.isEmpty) {
+      return AppErrorView(
+        message: categoryProvider.error!,
+        onRetry: () => _selectCompany(_companyId),
+      );
+    }
+    final categories = categoryProvider.categories;
     if (categories.isEmpty) {
-      return const Center(child: Text("Sin categorías para esta empresa"));
+      return const AppEmptyState(
+        icon: Icons.category,
+        title: AppStrings.noCategories,
+      );
     }
-    return ListView.separated(
-      itemCount: categories.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final c = categories[index];
-        return ListTile(
-          leading: const Icon(Icons.category),
-          title: Text(c.name),
-          trailing: PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == "edit") {
-                await context.push("/categories/${c.id}/edit", extra: c);
-                _loadCategories();
-              } else if (value == "delete") {
-                await CategoryService(ApiClient()).delete(c.id);
-                _loadCategories();
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: "edit", child: Text("Editar")),
-              PopupMenuItem(value: "delete", child: Text("Eliminar")),
-            ],
-          ),
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: () => context.read<CategoryProvider>().refresh(),
+      child: ListView.separated(
+        itemCount: categories.length,
+        separatorBuilder: (_, _) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final c = categories[index];
+          return ListTile(
+            leading: const Icon(Icons.category),
+            title: Text(c.name),
+            trailing: PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (value == "edit") {
+                  final provider = context.read<CategoryProvider>();
+                  await context.push("/categories/${c.id}/edit", extra: c);
+                  if (context.mounted) provider.refresh();
+                } else if (value == "delete") {
+                  await _deleteCategory(c.id);
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: "edit",
+                  child: Text(AppStrings.edit),
+                ),
+                PopupMenuItem(
+                  value: "delete",
+                  child: Text(AppStrings.delete),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

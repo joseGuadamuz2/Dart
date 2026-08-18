@@ -3,6 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
+import '../../shared/widgets/app_empty_state.dart';
+import '../../shared/widgets/app_error_view.dart';
+import '../../shared/widgets/app_loading.dart';
 import 'admin_service.dart';
 
 class AdminUsersScreen extends StatefulWidget {
@@ -18,23 +23,25 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   @override
   void initState() {
     super.initState();
-    _future = AdminService(ApiClient()).listUsers();
+    _future = AdminService(context.read<ApiClient>()).listUsers();
   }
 
-  void _reload() {
+  Future<void> _reload() async {
     setState(() {
-      _future = AdminService(ApiClient()).listUsers();
+      _future = AdminService(context.read<ApiClient>()).listUsers();
     });
+    await _future;
   }
 
   Future<void> _createUser() async {
+    final apiClient = context.read<ApiClient>();
     final result = await showDialog<UserFormData>(
       context: context,
       builder: (_) => const _CreateUserDialog(),
     );
     if (result != null) {
-      await AdminService(ApiClient()).createUser(result.toJson());
-      _reload();
+      await AdminService(apiClient).createUser(result.toJson());
+      if (mounted) _reload();
     }
   }
 
@@ -42,10 +49,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Usuarios"),
+        title: const Text(AppStrings.adminUsers),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: AppStrings.logout,
             onPressed: () => context.read<AuthProvider>().logout(),
           ),
         ],
@@ -58,25 +66,35 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppLoading();
           }
           if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
+            return AppErrorView(
+              message: AppError.from(snapshot.error!).message,
+              onRetry: _reload,
+            );
           }
           final users = snapshot.data ?? [];
-          return ListView.separated(
-            itemCount: users.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final u = users[index];
-              return ListTile(
-                leading: const Icon(Icons.person),
-                title: Text(
-                  "${u["firstName"]} ${u["lastName"]}",
-                ),
-                subtitle: Text("${u["email"]} · ${u["role"]}"),
-              );
-            },
+          if (users.isEmpty) {
+            return const AppEmptyState(
+              icon: Icons.person,
+              title: AppStrings.adminUsers,
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: _reload,
+            child: ListView.separated(
+              itemCount: users.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final u = users[index];
+                return ListTile(
+                  leading: const Icon(Icons.person),
+                  title: Text("${u["firstName"]} ${u["lastName"]}"),
+                  subtitle: Text("${u["email"]} · ${u["role"]}"),
+                );
+              },
+            ),
           );
         },
       ),
@@ -143,7 +161,7 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Crear usuario"),
+      title: const Text(AppStrings.createUser),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -152,30 +170,40 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
             children: [
               TextFormField(
                 controller: _email,
-                decoration: const InputDecoration(labelText: "Email"),
+                decoration: const InputDecoration(labelText: AppStrings.emailLabel),
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? "Requerido" : null,
+                    v == null || v.trim().isEmpty ? AppStrings.requiredField : null,
               ),
               TextFormField(
                 controller: _password,
-                decoration: const InputDecoration(labelText: "Contraseña"),
+                decoration: const InputDecoration(
+                  labelText: AppStrings.passwordLabel,
+                ),
                 obscureText: true,
               ),
               TextFormField(
                 controller: _firstName,
-                decoration: const InputDecoration(labelText: "Nombre"),
+                decoration: const InputDecoration(
+                  labelText: AppStrings.firstNameLabel,
+                ),
               ),
               TextFormField(
                 controller: _lastName,
-                decoration: const InputDecoration(labelText: "Apellido"),
+                decoration: const InputDecoration(
+                  labelText: AppStrings.lastNameLabel,
+                ),
               ),
               TextFormField(
                 controller: _tenantId,
-                decoration: const InputDecoration(labelText: "Tenant ID"),
+                decoration: const InputDecoration(
+                  labelText: AppStrings.tenantIdLabel,
+                ),
               ),
               DropdownButtonFormField<String>(
                 initialValue: _role,
-                decoration: const InputDecoration(labelText: "Rol"),
+                decoration: const InputDecoration(
+                  labelText: AppStrings.roleLabel,
+                ),
                 items: const [
                   DropdownMenuItem(value: "OWNER", child: Text("OWNER")),
                   DropdownMenuItem(value: "ADMIN", child: Text("ADMIN")),
@@ -189,7 +217,7 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Cancelar"),
+          child: const Text(AppStrings.cancel),
         ),
         ElevatedButton(
           onPressed: () {
@@ -207,7 +235,7 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
               ),
             );
           },
-          child: const Text("Crear"),
+          child: const Text(AppStrings.create),
         ),
       ],
     );

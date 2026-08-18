@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
 import '../../core/models/category.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../core/validators/validators.dart';
+import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_text_field.dart';
 import 'category_service.dart';
 
 class CategoryFormScreen extends StatefulWidget {
@@ -41,7 +48,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       _isLoading = true;
       _error = null;
     });
-    final service = CategoryService(ApiClient());
+    final service = CategoryService(context.read<ApiClient>());
     try {
       if (_isEditing) {
         await service.update(widget.category!.id, _nameController.text.trim());
@@ -53,10 +60,12 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
       }
       if (mounted) context.pop();
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = AppError.from(e).message;
+        });
+      }
     }
   }
 
@@ -64,7 +73,9 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? "Editar categoría" : "Nueva categoría"),
+        title: Text(
+          _isEditing ? AppStrings.editCategory : AppStrings.newCategory,
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -72,26 +83,21 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
+              AppTextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: "Nombre"),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? "Requerido" : null,
+                label: AppStrings.nameLabel,
+                validator: requiredValidator,
               ),
               const SizedBox(height: 24),
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                  child: Text(_error!, style: AppTextStyles.error),
                 ),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _save,
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : Text(_isEditing ? "Guardar" : "Crear"),
-                ),
+              AppButton(
+                label: _isEditing ? AppStrings.save : AppStrings.create,
+                isLoading: _isLoading,
+                onPressed: _save,
               ),
             ],
           ),

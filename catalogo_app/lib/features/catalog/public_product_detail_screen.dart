@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
 import '../../core/models/public_catalog.dart';
+import '../../shared/widgets/app_error_view.dart';
 import '../../shared/widgets/skeleton.dart';
 import 'catalog_service.dart';
 
@@ -32,7 +36,7 @@ class _PublicProductDetailScreenState
   @override
   void initState() {
     super.initState();
-    _future = CatalogService(ApiClient())
+    _future = CatalogService(context.read<ApiClient>())
         .getProduct(widget.companyId, widget.productId);
   }
 
@@ -53,7 +57,9 @@ class _PublicProductDetailScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.companyName ?? "Detalle")),
+      appBar: AppBar(
+        title: Text(widget.companyName ?? AppStrings.productDetail),
+      ),
       body: FutureBuilder<CatalogProduct>(
         future: _future,
         builder: (context, snapshot) {
@@ -61,7 +67,9 @@ class _PublicProductDetailScreenState
             return const _DetailSkeleton();
           }
           if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
+            return AppErrorView(
+              message: AppError.from(snapshot.error!).message,
+            );
           }
           final product = snapshot.data!;
           final images = product.images.isNotEmpty
@@ -128,7 +136,7 @@ class _PublicProductDetailScreenState
                     child: FilledButton.icon(
                       onPressed: () => _openWhatsApp(product),
                       icon: const Icon(Icons.chat),
-                      label: const Text("Consultar por WhatsApp"),
+                      label: const Text(AppStrings.consultWhatsApp),
                     ),
                   ),
                 ],
@@ -138,11 +146,19 @@ class _PublicProductDetailScreenState
                   child: OutlinedButton.icon(
                     onPressed: () {
                       Share.share(
-                        "Mira ${product.name}: ${ApiClient.productUrl(widget.companyId, widget.productId)}",
+                        AppStrings.shareProductText
+                            .replaceFirst("{name}", product.name)
+                            .replaceFirst(
+                              "{url}",
+                              ApiClient.productUrl(
+                                widget.companyId,
+                                widget.productId,
+                              ),
+                            ),
                       );
                     },
                     icon: const Icon(Icons.share),
-                    label: const Text("Compartir producto"),
+                    label: const Text(AppStrings.shareProduct),
                   ),
                 ),
               ],

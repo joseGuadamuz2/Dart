@@ -3,7 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
 import '../../core/models/company.dart';
+import '../../shared/widgets/app_empty_state.dart';
+import '../../shared/widgets/app_error_view.dart';
+import '../../shared/widgets/app_loading.dart';
 import 'admin_service.dart';
 
 class AdminCompaniesScreen extends StatefulWidget {
@@ -19,17 +24,25 @@ class _AdminCompaniesScreenState extends State<AdminCompaniesScreen> {
   @override
   void initState() {
     super.initState();
-    _future = AdminService(ApiClient()).listCompanies();
+    _future = AdminService(context.read<ApiClient>()).listCompanies();
+  }
+
+  Future<void> _reload() async {
+    setState(() {
+      _future = AdminService(context.read<ApiClient>()).listCompanies();
+    });
+    await _future;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Empresas"),
+        title: const Text(AppStrings.adminCompanies),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: AppStrings.logout,
             onPressed: () => context.read<AuthProvider>().logout(),
           ),
         ],
@@ -38,23 +51,37 @@ class _AdminCompaniesScreenState extends State<AdminCompaniesScreen> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppLoading();
           }
           if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
+            return AppErrorView(
+              message: AppError.from(snapshot.error!).message,
+              onRetry: _reload,
+            );
           }
           final companies = snapshot.data ?? [];
-          return ListView.separated(
-            itemCount: companies.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final c = companies[index];
-              return ListTile(
-                leading: const Icon(Icons.business),
-                title: Text(c.name),
-                subtitle: Text("WhatsApp: ${c.whatsappNumber}"),
-              );
-            },
+          if (companies.isEmpty) {
+            return const AppEmptyState(
+              icon: Icons.business,
+              title: AppStrings.noCompanies,
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: _reload,
+            child: ListView.separated(
+              itemCount: companies.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final c = companies[index];
+                return ListTile(
+                  leading: const Icon(Icons.business),
+                  title: Text(c.name),
+                  subtitle: Text(
+                    "${AppStrings.whatsAppPrefix}${c.whatsappNumber}",
+                  ),
+                );
+              },
+            ),
           );
         },
       ),

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/auth/auth_provider.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,29 +18,27 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  String? _error;
 
-  Future<void> _handleLogin() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
-    final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.login(
+  Future<void> _handleLogin(AuthProvider authProvider) async {
+    setState(() => _isLoading = true);
+    await authProvider.login(
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
-
-    setState(() => _isLoading = false);
-
-    if (!success && mounted) {
-      setState(() => _error = "Credenciales inválidas");
-    }
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
@@ -46,34 +49,33 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  "Catálogo SaaS",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  AppStrings.loginTitle,
+                  style: AppTextStyles.title,
                 ),
                 const SizedBox(height: 32),
-                TextField(
+                AppTextField(
                   controller: _emailController,
-                  decoration: const InputDecoration(labelText: "Correo"),
+                  label: AppStrings.emailLabel,
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppTextField(
                   controller: _passwordController,
+                  label: AppStrings.passwordLabel,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: "Contraseña"),
                 ),
                 const SizedBox(height: 24),
-                if (_error != null)
+                if (authProvider.error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                    child: Text(
+                      authProvider.error!,
+                      style: AppTextStyles.error,
+                    ),
                   ),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
-                    child: _isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text("Ingresar"),
-                  ),
+                AppButton(
+                  label: AppStrings.signIn,
+                  isLoading: _isLoading,
+                  onPressed: () => _handleLogin(authProvider),
                 ),
               ],
             ),
