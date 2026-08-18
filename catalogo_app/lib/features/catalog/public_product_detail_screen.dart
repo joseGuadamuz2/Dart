@@ -95,6 +95,14 @@ class _PublicProductDetailScreenState
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                if (product.code.isNotEmpty)
+                  Text(
+                    "${AppStrings.codeLabel}: ${product.code}",
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 if (product.category != null)
                   Text(
                     product.category!.name,

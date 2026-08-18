@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
+import '../categories/category_provider.dart';
 import '../companies/company_provider.dart';
 import '../products/product_model.dart';
 import '../products/product_provider.dart';
@@ -24,11 +25,19 @@ class ProductListScreen extends StatefulWidget {
 
 class _ProductListScreenState extends State<ProductListScreen> {
   String? _companyId;
+  final _searchController = TextEditingController();
+  String _searchQuery = "";
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _init());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _init() async {
@@ -49,8 +58,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   void _selectCompany(String? id) {
     setState(() => _companyId = id);
+    _searchController.clear();
+    setState(() => _searchQuery = "");
     if (id != null) {
       context.read<ProductProvider>().loadForCompany(id);
+      context.read<CategoryProvider>().loadForCompany(id);
     }
   }
 
@@ -85,7 +97,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
         children: [
           if (companies.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: DropdownButtonFormField<String>(
                 initialValue: _companyId,
                 decoration: const InputDecoration(
@@ -96,6 +108,28 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         DropdownMenuItem(value: c.id, child: Text(c.name)))
                     .toList(),
                 onChanged: _selectCompany,
+              ),
+            ),
+          if (companies.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) =>
+                    setState(() => _searchQuery = value.trim().toLowerCase()),
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  hintText: AppStrings.searchByKeyword,
+                  suffixIcon: _searchQuery.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = "");
+                          },
+                        ),
+                ),
               ),
             ),
           Expanded(child: _buildBody(companyProvider)),
@@ -151,20 +185,39 @@ class _ProductListScreenState extends State<ProductListScreen> {
         title: AppStrings.noProducts,
       );
     }
+    final filtered = _applySearch(products);
+    if (filtered.isEmpty) {
+      return const AppEmptyState(
+        icon: Icons.search_off,
+        title: AppStrings.noSearchResults,
+      );
+    }
     return RefreshIndicator(
       onRefresh: () => context.read<ProductProvider>().refresh(),
       child: ListView.separated(
-        itemCount: products.length,
+        itemCount: filtered.length,
         separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (context, index) {
-          final p = products[index];
+          final p = filtered[index];
           return ListTile(
-            leading: const Icon(Icons.shopping_bag),
+            leading: _buildThumbnail(p),
             title: Text(p.name),
-            subtitle: Text(
-              "${Currency.format(p.finalPrice)}"
-              "${p.discountPercentage > 0 ? " (${p.discountPercentage}% off)" : ""}",
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (p.code != null && p.code!.isNotEmpty)
+                  Text(p.code!, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  "${Currency.format(p.finalPrice)}"
+                  "${p.discountPercentage > 0 ? " (${p.discountPercentage}% off)" : ""}",
+                ),
+              ],
             ),
+            onTap: () async {
+              final provider = context.read<ProductProvider>();
+              await context.push("/products/${p.id}", extra: p);
+              if (context.mounted) provider.refresh();
+            },
             trailing: PopupMenuButton<String>(
               onSelected: (value) async {
                 if (value == "edit") {
@@ -190,5 +243,46 @@ class _ProductListScreenState extends State<ProductListScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildThumbnail(Product product) {
+    final url = product.mainImageUrl;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: url != null
+            ? Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _imagePlaceholder(),
+              )
+            : _imagePlaceholder(),
+      ),
+    );
+  }
+
+  Widget _imagePlaceholder() {
+    return Container(
+      color: Colors.grey.shade200,
+      child: const Icon(Icons.shopping_bag, color: Colors.grey),
+    );
+  }
+
+  List<Product> _applySearch(List<Product> products) {
+    if (_searchQuery.isEmpty) return products;
+    final categoryNames = {
+      for (final c in context.read<CategoryProvider>().categories)
+        c.id: c.name.toLowerCase(),
+    };
+    final query = _searchQuery;
+    return products.where((p) {
+      final categoryName =
+          p.categoryId != null ? categoryNames[p.categoryId] : null;
+      return p.name.toLowerCase().contains(query) ||
+          (p.code != null && p.code!.toLowerCase().contains(query)) ||
+          (categoryName != null && categoryName.contains(query));
+    }).toList();
   }
 }

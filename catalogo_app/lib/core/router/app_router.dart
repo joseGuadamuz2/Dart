@@ -14,6 +14,7 @@ import '../../features/categories/category_list_screen.dart';
 import '../../features/companies/company_form_screen.dart';
 import '../../features/companies/company_list_screen.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/products/product_detail_screen.dart';
 import '../../features/products/product_form_screen.dart';
 import '../../features/products/product_list_screen.dart';
 import '../../features/products/product_model.dart';
@@ -44,6 +45,11 @@ GoRouter createRouter(AuthProvider authProvider) {
       GoRoute(
         path: "/products",
         builder: (context, state) => const ProductListScreen(),
+      ),
+      GoRoute(
+        path: "/products/:id",
+        builder: (context, state) =>
+            ProductDetailScreen(product: state.extra as Product),
       ),
       GoRoute(
         path: "/products/new",

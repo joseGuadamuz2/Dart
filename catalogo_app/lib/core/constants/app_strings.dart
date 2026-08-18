@@ -37,6 +37,8 @@ abstract final class AppStrings {
 
   // Products
   static const String productsTitle = "Productos";
+  static const String searchByKeyword = "Buscar por nombre, código o categoría";
+  static const String noSearchResults = "Sin resultados para la búsqueda";
   static const String newProduct = "Nuevo producto";
   static const String editProduct = "Editar producto";
   static const String noProducts = "Sin productos";

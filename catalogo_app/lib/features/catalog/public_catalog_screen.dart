@@ -400,6 +400,13 @@ class _ProductCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
+                  if (product.code.isNotEmpty)
+                    Text(
+                      product.code,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
                   if (product.category != null)
                     Text(
                       product.category!.name,
