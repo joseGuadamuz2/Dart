@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -320,6 +319,17 @@ class _ProductCard extends StatelessWidget {
 
   const _ProductCard({required this.companyId, required this.product});
 
+  Future<void> _openWhatsApp(BuildContext context, String link) async {
+    final uri = Uri.parse(link);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No se pudo abrir el enlace")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasDiscount = product.discountPercentage > 0;
@@ -440,44 +450,49 @@ class _ProductCard extends StatelessWidget {
                       ],
                     ],
                   ),
-                  if (product.whatsappLink.isNotEmpty)
-                    Row(
-                      children: [
-                        IconButton(
+                  if (product.whatsappLink.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.tonalIcon(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.chat, size: 20),
-                          tooltip: "Copiar enlace de WhatsApp",
-                          onPressed: () {
-                            Clipboard.setData(
-                              ClipboardData(text: product.whatsappLink),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(AppStrings.linkCopied),
-                              ),
-                            );
-                          },
+                          textStyle: const TextStyle(fontSize: 13),
                         ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.share, size: 20),
-                          tooltip: AppStrings.shareProduct,
-                          onPressed: () {
-                            Share.share(
-                              AppStrings.shareProductText
-                                  .replaceFirst("{name}", product.name)
-                                  .replaceFirst(
-                                    "{url}",
-                                    ApiClient.productUrl(
-                                      companyId,
-                                      product.id,
-                                    ),
-                                  ),
-                            );
-                          },
-                        ),
-                      ],
+                        onPressed: () =>
+                            _openWhatsApp(context, product.whatsappLink),
+                        icon: const Icon(Icons.chat, size: 18),
+                        label: const Text(AppStrings.consultWhatsApp),
+                      ),
                     ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          visualDensity: VisualDensity.compact,
+                          textStyle: const TextStyle(fontSize: 13),
+                        ),
+                        onPressed: () {
+                          Share.share(
+                            AppStrings.shareProductText
+                                .replaceFirst("{name}", product.name)
+                                .replaceFirst(
+                                  "{url}",
+                                  ApiClient.productUrl(
+                                    companyId,
+                                    product.id,
+                                  ),
+                                ),
+                          );
+                        },
+                        icon: const Icon(Icons.share, size: 18),
+                        label: const Text(AppStrings.share),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
