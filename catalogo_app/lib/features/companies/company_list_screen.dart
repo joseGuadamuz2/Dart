@@ -8,6 +8,7 @@ import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/models/company.dart';
+import '../../core/theme/app_colors.dart';
 import '../companies/company_provider.dart';
 import '../../shared/widgets/app_dialog.dart';
 import '../../shared/widgets/app_empty_state.dart';
@@ -43,7 +44,8 @@ class _CompanyListScreenState extends State<CompanyListScreen> {
 
   Future<void> _copyLink(Company company) async {
     final messenger = ScaffoldMessenger.of(context);
-    await Clipboard.setData(ClipboardData(text: ApiClient.catalogUrl(company.id)));
+    await Clipboard.setData(
+        ClipboardData(text: ApiClient.catalogUrl(company.id)));
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(const SnackBar(content: Text(AppStrings.linkCopied)));
@@ -112,40 +114,70 @@ class _CompanyListScreenState extends State<CompanyListScreen> {
       return const AppEmptyState(
         icon: Icons.store,
         title: AppStrings.noCompanies,
+        message: AppStrings.noCompaniesHint,
       );
     }
     return RefreshIndicator(
       onRefresh: () => context.read<CompanyProvider>().refresh(),
       child: ListView.separated(
+        padding: const EdgeInsets.all(16),
         itemCount: companies.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final c = companies[index];
-          return ListTile(
-            leading: const Icon(Icons.store),
-            title: Text(c.name),
-            subtitle: Text("${AppStrings.whatsAppPrefix}${c.whatsappNumber}"),
-            trailing: PopupMenuButton<String>(
-              onSelected: (value) => _onMenuSelected(c, value),
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: "edit", child: Text(AppStrings.edit)),
-                PopupMenuItem(
-                  value: "catalog",
-                  child: Text(AppStrings.viewPublicCatalog),
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                PopupMenuItem(
-                  value: "share",
-                  child: Text(AppStrings.shareCatalog),
+                child: const Icon(Icons.storefront,
+                    color: AppColors.primary, size: 22),
+              ),
+              title: Text(
+                c.name,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
-                PopupMenuItem(
-                  value: "copy",
-                  child: Text(AppStrings.copyLink),
-                ),
-                PopupMenuItem(
-                  value: "delete",
-                  child: Text(AppStrings.delete),
-                ),
-              ],
+              ),
+              subtitle: Text(
+                "${AppStrings.whatsAppPrefix}${c.whatsappNumber}",
+                style: const TextStyle(fontSize: 12),
+              ),
+              trailing: PopupMenuButton<String>(
+                onSelected: (value) => _onMenuSelected(c, value),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: "edit", child: Text(AppStrings.edit)),
+                  PopupMenuItem(
+                    value: "catalog",
+                    child: Text(AppStrings.viewPublicCatalog),
+                  ),
+                  PopupMenuItem(
+                    value: "share",
+                    child: Text(AppStrings.shareCatalog),
+                  ),
+                  PopupMenuItem(
+                    value: "copy",
+                    child: Text(AppStrings.copyLink),
+                  ),
+                  PopupMenuItem(
+                    value: "delete",
+                    child: Text(AppStrings.delete),
+                  ),
+                ],
+              ),
             ),
           );
         },

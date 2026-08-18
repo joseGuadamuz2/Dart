@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
 class AppEmptyState extends StatelessWidget {
@@ -24,8 +25,16 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 44, color: AppColors.primary),
+            ),
+            const SizedBox(height: 20),
             Text(title, style: AppTextStyles.heading, textAlign: TextAlign.center),
             if (message != null) ...[
               const SizedBox(height: 8),
@@ -36,7 +45,7 @@ class AppEmptyState extends StatelessWidget {
               ),
             ],
             if (action != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               action!,
             ],
           ],

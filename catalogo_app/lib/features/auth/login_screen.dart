@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
@@ -21,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _rememberUser = false;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -66,61 +68,187 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  AppStrings.loginTitle,
-                  style: AppTextStyles.title,
-                ),
-                const SizedBox(height: 32),
-                AppTextField(
-                  controller: _emailController,
-                  label: AppStrings.emailLabel,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _passwordController,
-                  label: AppStrings.passwordLabel,
-                  obscureText: true,
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: CheckboxListTile(
-                    value: _rememberUser,
-                    onChanged: (value) =>
-                        setState(() => _rememberUser = value ?? false),
-                    title: const Text(AppStrings.rememberUser),
-                    dense: true,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (authProvider.error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      authProvider.error!,
-                      style: AppTextStyles.error,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.primaryContainer, AppColors.background],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildLogo(),
+                    const SizedBox(height: 32),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.shadow,
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            AppStrings.welcomeBack,
+                            style: AppTextStyles.title,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            AppStrings.loginSubtitle,
+                            style: AppTextStyles.body,
+                          ),
+                          const SizedBox(height: 24),
+                          AppTextField(
+                            controller: _emailController,
+                            label: AppStrings.emailLabel,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            prefixIcon: const Icon(Icons.mail_outline),
+                          ),
+                          const SizedBox(height: 16),
+                          AppTextField(
+                            controller: _passwordController,
+                            label: AppStrings.passwordLabel,
+                            obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          InkWell(
+                            onTap: () => setState(
+                                () => _rememberUser = !_rememberUser),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 32,
+                                    height: 32,
+                                    child: Checkbox(
+                                      value: _rememberUser,
+                                      onChanged: (value) => setState(() =>
+                                          _rememberUser = value ?? false),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(6),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    AppStrings.rememberUser,
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (authProvider.error != null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.dangerContainer,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.error_outline,
+                                      color: AppColors.danger, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      authProvider.error!,
+                                      style: AppTextStyles.error,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          AppButton(
+                            label: AppStrings.signIn,
+                            isLoading: _isLoading,
+                            icon: Icons.login,
+                            onPressed: () => _handleLogin(authProvider),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                AppButton(
-                  label: AppStrings.signIn,
-                  isLoading: _isLoading,
-                  onPressed: () => _handleLogin(authProvider),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLogo() {
+    return Column(
+      children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primaryGradientTop,
+                AppColors.primaryGradientBottom,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.storefront, color: Colors.white, size: 36),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          AppStrings.loginTitle,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -3,6 +3,9 @@ abstract final class AppStrings {
 
   // Auth
   static const String loginTitle = "Catálogo SaaS";
+  static const String welcomeBack = "¡Bienvenido de nuevo!";
+  static const String loginSubtitle =
+      "Inicia sesión para gestionar tu catálogo.";
   static const String emailLabel = "Correo";
   static const String passwordLabel = "Contraseña";
   static const String signIn = "Ingresar";
@@ -35,6 +38,7 @@ abstract final class AppStrings {
   static const String connectionError =
       "Error de conexión. Verifica tu internet.";
   static const String unexpectedError = "Ocurrió un error inesperado.";
+  static const String somethingWentWrong = "Algo salió mal";
 
   // Products
   static const String productsTitle = "Productos";
@@ -43,6 +47,8 @@ abstract final class AppStrings {
   static const String newProduct = "Nuevo producto";
   static const String editProduct = "Editar producto";
   static const String noProducts = "Sin productos";
+  static const String noProductsHint =
+      "Agrega tu primer producto para mostrarlo en el catálogo.";
   static const String priceLabel = "Precio";
   static const String discountLabel = "Descuento (%)";
   static const String codeLabel = "Código";
@@ -61,6 +67,8 @@ abstract final class AppStrings {
   static const String newCompany = "Nueva empresa";
   static const String editCompany = "Editar empresa";
   static const String noCompanies = "No tienes empresas creadas";
+  static const String noCompaniesHint =
+      "Crea tu primera empresa para comenzar a armar tu catálogo.";
   static const String companyLabel = "Empresa";
   static const String whatsappLabel = "WhatsApp (506 + 8 dígitos)";
   static const String whatsappHint = "50688888888";
@@ -77,6 +85,8 @@ abstract final class AppStrings {
   static const String newCategory = "Nueva categoría";
   static const String editCategory = "Editar categoría";
   static const String noCategories = "Sin categorías para esta empresa";
+  static const String noCategoriesHint =
+      "Crea categorías para organizar tus productos.";
   static const String categoryLabel = "Categoría";
   static const String deleteCategoryTitle = "Eliminar categoría";
   static const String deleteCategoryMessage =
@@ -118,5 +128,6 @@ abstract final class AppStrings {
 
   // Home
   static const String greeting = "Hola, {name}";
-  static const String sectionCompanies = "Empresa";
+  static const String sectionCompanies = "Mis empresas";
+  static const String adminSection = "Administración";
 }

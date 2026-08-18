@@ -9,6 +9,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/models/public_catalog.dart';
+import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_error_view.dart';
 import '../../shared/widgets/skeleton.dart';
@@ -202,38 +203,51 @@ class _BrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          child: Icon(
-            Icons.storefront,
-            size: 32,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primaryGradientTop, AppColors.primaryGradientBottom],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                company.name,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (company.whatsappNumber.isNotEmpty)
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.storefront,
+                size: 30, color: Colors.white),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  "WhatsApp: ${company.whatsappNumber}",
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  company.name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
-            ],
+                if (company.whatsappNumber.isNotEmpty)
+                  Text(
+                    "WhatsApp: ${company.whatsappNumber}",
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -334,9 +348,13 @@ class _ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasDiscount = product.discountPercentage > 0;
     final image = product.imageUrl;
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
       clipBehavior: Clip.antiAlias,
-      margin: EdgeInsets.zero,
       child: InkWell(
         onTap: () => context.push(
           "/public-catalog/$companyId/products/${product.id}",
@@ -367,7 +385,7 @@ class _ProductCard extends StatelessWidget {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color: AppColors.success,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -400,7 +418,7 @@ class _ProductCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -408,19 +426,24 @@ class _ProductCard extends StatelessWidget {
                     product.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   if (product.code.isNotEmpty)
                     Text(
                       product.code,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      style: const TextStyle(
+                          color: AppColors.textMuted, fontSize: 12),
                     ),
                   if (product.category != null)
                     Text(
                       product.category!.name,
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      style: const TextStyle(
+                          color: AppColors.textSecondary, fontSize: 12),
                     ),
                   const SizedBox(height: 4),
                   Row(
@@ -431,7 +454,9 @@ class _ProductCard extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: hasDiscount ? Colors.green : null,
+                            color: hasDiscount
+                                ? AppColors.success
+                                : AppColors.primary,
                           ),
                         ),
                       ),
@@ -442,7 +467,7 @@ class _ProductCard extends StatelessWidget {
                             Currency.format(product.price),
                             style: const TextStyle(
                               decoration: TextDecoration.lineThrough,
-                              color: Colors.grey,
+                              color: AppColors.textMuted,
                               fontSize: 12,
                             ),
                           ),
@@ -511,9 +536,9 @@ class _ImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.grey.shade200,
+      color: AppColors.surfaceMuted,
       child: Center(
-        child: Icon(icon, size: 48, color: Colors.grey.shade500),
+        child: Icon(icon, size: 48, color: AppColors.textMuted),
       ),
     );
   }

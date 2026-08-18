@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/models/company.dart';
+import '../../core/theme/app_colors.dart';
 import '../categories/category_provider.dart';
 import '../companies/company_provider.dart';
 import '../products/product_model.dart';
@@ -95,43 +97,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
       body: Column(
         children: [
-          if (companies.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: DropdownButtonFormField<String>(
-                initialValue: _companyId,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.companyLabel,
-                ),
-                items: companies
-                    .map((c) =>
-                        DropdownMenuItem(value: c.id, child: Text(c.name)))
-                    .toList(),
-                onChanged: _selectCompany,
-              ),
-            ),
-          if (companies.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) =>
-                    setState(() => _searchQuery = value.trim().toLowerCase()),
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search),
-                  hintText: AppStrings.searchByKeyword,
-                  suffixIcon: _searchQuery.isEmpty
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = "");
-                          },
-                        ),
-                ),
-              ),
-            ),
+          if (companies.isNotEmpty) _buildCompanySelector(companies),
+          if (companies.isNotEmpty) _buildSearchField(),
           Expanded(child: _buildBody(companyProvider)),
         ],
       ),
@@ -145,6 +112,46 @@ class _ProductListScreenState extends State<ProductListScreen> {
               },
               child: const Icon(Icons.add),
             ),
+    );
+  }
+
+  Widget _buildCompanySelector(List<Company> companies) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: DropdownButtonFormField<String>(
+        initialValue: _companyId,
+        decoration: const InputDecoration(
+          labelText: AppStrings.companyLabel,
+          prefixIcon: Icon(Icons.storefront_outlined),
+        ),
+        items: companies
+            .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+            .toList(),
+        onChanged: _selectCompany,
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) =>
+            setState(() => _searchQuery = value.trim().toLowerCase()),
+        decoration: InputDecoration(
+          hintText: AppStrings.searchByKeyword,
+          suffixIcon: _searchQuery.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = "");
+                  },
+                ),
+        ),
+      ),
     );
   }
 
@@ -183,6 +190,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       return const AppEmptyState(
         icon: Icons.shopping_bag,
         title: AppStrings.noProducts,
+        message: AppStrings.noProductsHint,
       );
     }
     final filtered = _applySearch(products);
@@ -195,78 +203,27 @@ class _ProductListScreenState extends State<ProductListScreen> {
     return RefreshIndicator(
       onRefresh: () => context.read<ProductProvider>().refresh(),
       child: ListView.separated(
+        padding: const EdgeInsets.all(16),
         itemCount: filtered.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final p = filtered[index];
-          return ListTile(
-            leading: _buildThumbnail(p),
-            title: Text(p.name),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (p.code != null && p.code!.isNotEmpty)
-                  Text(p.code!, style: Theme.of(context).textTheme.bodySmall),
-                Text(
-                  "${Currency.format(p.finalPrice)}"
-                  "${p.discountPercentage > 0 ? " (${p.discountPercentage}% off)" : ""}",
-                ),
-              ],
-            ),
+          return _ProductCard(
+            product: p,
             onTap: () async {
               final provider = context.read<ProductProvider>();
               await context.push("/products/${p.id}", extra: p);
               if (context.mounted) provider.refresh();
             },
-            trailing: PopupMenuButton<String>(
-              onSelected: (value) async {
-                if (value == "edit") {
-                  final provider = context.read<ProductProvider>();
-                  await context.push("/products/${p.id}/edit", extra: p);
-                  if (context.mounted) provider.refresh();
-                } else if (value == "delete") {
-                  await _deleteProduct(p);
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: "edit",
-                  child: Text(AppStrings.edit),
-                ),
-                const PopupMenuItem(
-                  value: "delete",
-                  child: Text(AppStrings.delete),
-                ),
-              ],
-            ),
+            onEdit: () async {
+              final provider = context.read<ProductProvider>();
+              await context.push("/products/${p.id}/edit", extra: p);
+              if (context.mounted) provider.refresh();
+            },
+            onDelete: () => _deleteProduct(p),
           );
         },
       ),
-    );
-  }
-
-  Widget _buildThumbnail(Product product) {
-    final url = product.mainImageUrl;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: SizedBox(
-        width: 48,
-        height: 48,
-        child: url != null
-            ? Image.network(
-                url,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _imagePlaceholder(),
-              )
-            : _imagePlaceholder(),
-      ),
-    );
-  }
-
-  Widget _imagePlaceholder() {
-    return Container(
-      color: Colors.grey.shade200,
-      child: const Icon(Icons.shopping_bag, color: Colors.grey),
     );
   }
 
@@ -284,5 +241,170 @@ class _ProductListScreenState extends State<ProductListScreen> {
           (p.code != null && p.code!.toLowerCase().contains(query)) ||
           (categoryName != null && categoryName.contains(query));
     }).toList();
+  }
+}
+
+class _ProductCard extends StatelessWidget {
+  final Product product;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _ProductCard({
+    required this.product,
+    required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasDiscount = product.discountPercentage > 0;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            _buildThumbnail(product),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (product.code != null && product.code!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(product.code!, style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textMuted,
+                    )),
+                  ],
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Text(
+                        Currency.format(product.finalPrice),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      if (hasDiscount) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          Currency.format(product.price),
+                          style: const TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.successContainer,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            "-${product.discountPercentage.round()}%",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSuccessContainer,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (!product.isAvailable) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.dangerContainer,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            AppStrings.outOfStock,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onDangerContainer,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == "edit") {
+                  onEdit();
+                } else if (value == "delete") {
+                  onDelete();
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: "edit",
+                  child: Text(AppStrings.edit),
+                ),
+                PopupMenuItem(
+                  value: "delete",
+                  child: Text(AppStrings.delete),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThumbnail(Product product) {
+    final url = product.mainImageUrl;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: 64,
+        height: 64,
+        child: url != null
+            ? Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _imagePlaceholder(),
+              )
+            : _imagePlaceholder(),
+      ),
+    );
+  }
+
+  Widget _imagePlaceholder() {
+    return Container(
+      color: AppColors.surfaceMuted,
+      child: const Icon(Icons.shopping_bag, color: AppColors.textMuted),
+    );
   }
 }

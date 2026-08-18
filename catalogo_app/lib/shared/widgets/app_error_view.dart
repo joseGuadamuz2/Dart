@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_strings.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import 'app_button.dart';
 
@@ -18,13 +19,31 @@ class AppErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: AppColors.dangerContainer,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                size: 44,
+                color: AppColors.danger,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              AppStrings.somethingWentWrong,
+              style: AppTextStyles.heading,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
             Text(message, style: AppTextStyles.body, textAlign: TextAlign.center),
             if (onRetry != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               SizedBox(
-                width: 160,
+                width: 200,
                 child: AppButton(
                   label: AppStrings.retry,
                   icon: Icons.refresh,

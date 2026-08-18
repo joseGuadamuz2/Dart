@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_dialog.dart';
@@ -105,7 +106,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: hasDiscount ? Colors.green : null,
+                        color: hasDiscount ? AppColors.success : AppColors.primary,
                       ),
                     ),
                     if (hasDiscount) ...[
@@ -114,7 +115,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         Currency.format(_product.price),
                         style: const TextStyle(
                           decoration: TextDecoration.lineThrough,
-                          color: Colors.grey,
+                          color: AppColors.textMuted,
                         ),
                       ),
                     ],
@@ -155,16 +156,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   onPressed: _edit,
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                    ),
-                    onPressed: _delete,
-                    icon: const Icon(Icons.delete),
-                    label: const Text(AppStrings.delete),
-                  ),
+                AppButton(
+                  label: AppStrings.delete,
+                  icon: Icons.delete,
+                  variant: AppButtonVariant.danger,
+                  onPressed: _delete,
                 ),
               ],
             ),

@@ -8,6 +8,8 @@ import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/models/company.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/app_dialog.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_error_view.dart';
@@ -40,7 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _copyLink(Company company) async {
     final messenger = ScaffoldMessenger.of(context);
-    await Clipboard.setData(ClipboardData(text: ApiClient.catalogUrl(company.id)));
+    await Clipboard.setData(
+        ClipboardData(text: ApiClient.catalogUrl(company.id)));
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(const SnackBar(content: Text(AppStrings.linkCopied)));
@@ -97,37 +100,160 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            if (user != null)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppStrings.greeting.replaceFirst("{name}", user.fullName),
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "${user.email} · ${user.role}",
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            const SizedBox(height: 16),
+            if (user != null) _buildGreeting(user.fullName, user.email, user.role),
+            const SizedBox(height: 20),
             if (isAdmin) ...[
-              _menuTile(context, AppStrings.adminCompanies, Icons.business,
-                  "/admin/companies"),
-              _menuTile(context, AppStrings.adminUsers, Icons.group,
-                  "/admin/users"),
-              _menuTile(context, AppStrings.adminLicenses, Icons.verified_user,
-                  "/admin/licenses"),
-              const SizedBox(height: 16),
+              _buildAdminSection(context),
+              const SizedBox(height: 20),
             ],
             _buildCompaniesSection(provider, companies),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGreeting(String name, String email, String role) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primaryGradientTop,
+            AppColors.primaryGradientBottom,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: Colors.white.withValues(alpha: 0.25),
+            child: Text(
+              name.isNotEmpty ? name[0].toUpperCase() : "?",
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.greeting.replaceFirst("{name}", name),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  email,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (role.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                role,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(AppStrings.adminSection,
+            style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _adminTile(context, Icons.business, AppStrings.adminCompanies,
+                  "/admin/companies"),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _adminTile(context, Icons.group, AppStrings.adminUsers,
+                  "/admin/users"),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _adminTile(context, Icons.verified_user,
+                  AppStrings.adminLicenses, "/admin/licenses"),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _adminTile(BuildContext context, IconData icon, String title,
+      String route) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => context.push(route),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 22),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ],
         ),
       ),
@@ -151,6 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return const AppEmptyState(
         icon: Icons.store,
         title: AppStrings.noCompanies,
+        message: AppStrings.noCompaniesHint,
       );
     }
     return Column(
@@ -161,89 +288,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Text(AppStrings.sectionCompanies,
               style: Theme.of(context).textTheme.titleMedium),
         ),
-        for (final company in companies)
-          Card(
-            clipBehavior: Clip.antiAlias,
-            child: ExpansionTile(
-              controlAffinity: ListTileControlAffinity.leading,
-              leading: const Icon(Icons.expand_more),
-              title: Row(
-                children: [
-                  const Icon(Icons.store),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(company.name)),
-                ],
-              ),
-              subtitle: Text(
-                "${AppStrings.whatsAppPrefix}${company.whatsappNumber}",
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.share),
-                    tooltip: AppStrings.shareCatalog,
-                    onPressed: () => _shareCatalog(company),
-                  ),
-                  PopupMenuButton<String>(
-                    tooltip: "Configuración",
-                    onSelected: (value) => _onMenuSelected(company, value),
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(
-                        value: "catalog",
-                        child: Text(AppStrings.viewPublicCatalog),
-                      ),
-                      PopupMenuItem(
-                        value: "share",
-                        child: Text(AppStrings.shareCatalog),
-                      ),
-                      PopupMenuItem(
-                        value: "copy",
-                        child: Text(AppStrings.copyLink),
-                      ),
-                      PopupMenuItem(
-                        value: "edit",
-                        child: Text(AppStrings.configureCompany),
-                      ),
-                      PopupMenuItem(
-                        value: "delete",
-                        child: Text(AppStrings.delete),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              childrenPadding: const EdgeInsets.only(bottom: 8),
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.public),
-                  title: const Text(AppStrings.viewPublicCatalog),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(
-                    "/public-catalog/${company.id}",
-                    extra: company.name,
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.shopping_bag),
-                  title: const Text(AppStrings.productsTitle),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(
-                    "/companies/${company.id}/products",
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.category),
-                  title: const Text(AppStrings.categoriesTitle),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(
-                    "/companies/${company.id}/categories",
-                  ),
-                ),
-              ],
-            ),
-          ),
-        const SizedBox(height: 8),
+        for (final company in companies) ...[
+          _buildCompanyCard(context, company),
+          const SizedBox(height: 12),
+        ],
         _menuTile(
           context,
           AppStrings.manageMyCompanies,
@@ -254,18 +302,178 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildCompanyCard(BuildContext context, Company company) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.storefront,
+                      color: AppColors.primary, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(company.name,
+                          style: AppTextStyles.heading,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 2),
+                      Text(
+                        "${AppStrings.whatsAppPrefix}${company.whatsappNumber}",
+                        style: AppTextStyles.caption,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.share),
+                  tooltip: AppStrings.shareCatalog,
+                  onPressed: () => _shareCatalog(company),
+                ),
+                PopupMenuButton<String>(
+                  tooltip: "Configuración",
+                  onSelected: (value) => _onMenuSelected(company, value),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: "catalog",
+                      child: Text(AppStrings.viewPublicCatalog),
+                    ),
+                    PopupMenuItem(
+                      value: "share",
+                      child: Text(AppStrings.shareCatalog),
+                    ),
+                    PopupMenuItem(
+                      value: "copy",
+                      child: Text(AppStrings.copyLink),
+                    ),
+                    PopupMenuItem(
+                      value: "edit",
+                      child: Text(AppStrings.configureCompany),
+                    ),
+                    PopupMenuItem(
+                      value: "delete",
+                      child: Text(AppStrings.delete),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _quickAction(context, Icons.public,
+                      AppStrings.viewPublicCatalog,
+                      () => context.push(
+                            "/public-catalog/${company.id}",
+                            extra: company.name,
+                          )),
+                ),
+                Expanded(
+                  child: _quickAction(context, Icons.shopping_bag,
+                      AppStrings.productsTitle,
+                      () => context.push(
+                            "/companies/${company.id}/products",
+                          )),
+                ),
+                Expanded(
+                  child: _quickAction(context, Icons.category,
+                      AppStrings.categoriesTitle,
+                      () => context.push(
+                            "/companies/${company.id}/categories",
+                          )),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickAction(
+      BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          children: [
+            Icon(icon, size: 20, color: AppColors.primary),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _menuTile(BuildContext context, String title, IconData icon,
       String route) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () async {
-          final provider = context.read<CompanyProvider>();
-          await context.push(route);
-          if (context.mounted) provider.refresh();
-        },
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () async {
+        final provider = context.read<CompanyProvider>();
+        await context.push(route);
+        if (context.mounted) provider.refresh();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 20, color: AppColors.primary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  )),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textMuted),
+          ],
+        ),
       ),
     );
   }

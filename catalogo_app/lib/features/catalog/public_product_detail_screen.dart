@@ -8,6 +8,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/models/public_catalog.dart';
+import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_error_view.dart';
 import '../../shared/widgets/skeleton.dart';
 import 'catalog_service.dart';
@@ -93,20 +94,21 @@ class _PublicProductDetailScreenState
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 if (product.code.isNotEmpty)
                   Text(
                     "${AppStrings.codeLabel}: ${product.code}",
                     style: const TextStyle(
-                      color: Colors.grey,
+                      color: AppColors.textSecondary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 if (product.category != null)
                   Text(
                     product.category!.name,
-                    style: const TextStyle(color: Colors.grey),
+                    style: const TextStyle(color: AppColors.textMuted),
                   ),
                 const SizedBox(height: 8),
                 Row(
@@ -116,7 +118,7 @@ class _PublicProductDetailScreenState
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: hasDiscount ? Colors.green : null,
+                        color: hasDiscount ? AppColors.success : AppColors.primary,
                       ),
                     ),
                     if (hasDiscount) ...[
@@ -125,7 +127,7 @@ class _PublicProductDetailScreenState
                         Currency.format(product.price),
                         style: const TextStyle(
                           decoration: TextDecoration.lineThrough,
-                          color: Colors.grey,
+                          color: AppColors.textMuted,
                         ),
                       ),
                     ],
@@ -136,10 +138,19 @@ class _PublicProductDetailScreenState
                   const SizedBox(height: 16),
                   const Text(
                     "Descripción",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  Text(product.description!),
+                  Text(
+                    product.description!,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
                 ],
                 if (product.whatsappLink.isNotEmpty) ...[
                   const SizedBox(height: 24),

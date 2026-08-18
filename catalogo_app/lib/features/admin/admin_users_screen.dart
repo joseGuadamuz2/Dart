@@ -5,6 +5,7 @@ import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/errors/app_error.dart';
+import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_error_view.dart';
 import '../../shared/widgets/app_loading.dart';
@@ -84,14 +85,44 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           return RefreshIndicator(
             onRefresh: _reload,
             child: ListView.separated(
+              padding: const EdgeInsets.all(16),
               itemCount: users.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final u = users[index];
-                return ListTile(
-                  leading: const Icon(Icons.person),
-                  title: Text("${u["firstName"]} ${u["lastName"]}"),
-                  subtitle: Text("${u["email"]} · ${u["role"]}"),
+                final role = u["role"] ?? "";
+                return Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 4),
+                    leading: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.person,
+                          color: AppColors.primary, size: 22),
+                    ),
+                    title: Text(
+                      "${u["firstName"]} ${u["lastName"]}",
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    subtitle: Text(
+                      "${u["email"]} · $role",
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
                 );
               },
             ),

@@ -97,85 +97,91 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
           _isEditing ? AppStrings.editCompany : AppStrings.newCompany,
         ),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              AppTextField(
-                controller: _nameController,
-                label: AppStrings.nameLabel,
-                validator: requiredValidator,
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                controller: _whatsappController,
-                label: AppStrings.whatsappLabel,
-                hint: AppStrings.whatsappHint,
-                keyboardType: TextInputType.phone,
-                validator: whatsappValidator,
-              ),
-              const SizedBox(height: 24),
-              if (_isEditing) ...[
-                const Divider(),
-                const SizedBox(height: 16),
-                const Text(
-                  AppStrings.yourCatalog,
-                  style: AppTextStyles.heading,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  AppStrings.shareCatalogHint,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppButton(
-                        label: AppStrings.share,
-                        icon: Icons.share,
-                        variant: AppButtonVariant.secondary,
-                        onPressed: () async {
-                          await Share.share(
-                            AppStrings.shareCatalogText
-                                .replaceFirst(
-                                  "{name}",
-                                  _nameController.text.trim(),
-                                )
-                                .replaceFirst(
-                                  "{url}",
-                                  ApiClient.catalogUrl(widget.company!.id),
-                                ),
-                          );
-                        },
-                      ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppTextField(
+                    controller: _nameController,
+                    label: AppStrings.nameLabel,
+                    validator: requiredValidator,
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    controller: _whatsappController,
+                    label: AppStrings.whatsappLabel,
+                    hint: AppStrings.whatsappHint,
+                    keyboardType: TextInputType.phone,
+                    validator: whatsappValidator,
+                  ),
+                  const SizedBox(height: 24),
+                  if (_isEditing) ...[
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    const Text(
+                      AppStrings.yourCatalog,
+                      style: AppTextStyles.heading,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AppButton(
-                        label: AppStrings.copyLink,
-                        icon: Icons.link,
-                        variant: AppButtonVariant.secondary,
-                        onPressed: _copyLink,
-                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      AppStrings.shareCatalogHint,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AppButton(
+                            label: AppStrings.share,
+                            icon: Icons.share,
+                            variant: AppButtonVariant.secondary,
+                            onPressed: () async {
+                              await Share.share(
+                                AppStrings.shareCatalogText
+                                    .replaceFirst(
+                                      "{name}",
+                                      _nameController.text.trim(),
+                                    )
+                                    .replaceFirst(
+                                      "{url}",
+                                      ApiClient.catalogUrl(widget.company!.id),
+                                    ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: AppButton(
+                            label: AppStrings.copyLink,
+                            icon: Icons.link,
+                            variant: AppButtonVariant.secondary,
+                            onPressed: _copyLink,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
                   ],
-                ),
-                const SizedBox(height: 24),
-              ],
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(_error!, style: AppTextStyles.error),
-                ),
-              AppButton(
-                label: _isEditing ? AppStrings.save : AppStrings.create,
-                isLoading: _isLoading,
-                onPressed: _save,
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text(_error!, style: AppTextStyles.error),
+                    ),
+                  AppButton(
+                    label: _isEditing ? AppStrings.save : AppStrings.create,
+                    isLoading: _isLoading,
+                    onPressed: _save,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
