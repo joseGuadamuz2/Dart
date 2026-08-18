@@ -1,0 +1,33 @@
+services:
+  - type: web
+    runtime: static
+    name: catalogo-web
+    rootDir: catalogo_app
+    buildCommand: |
+      set -e
+      git clone --depth 1 --branch stable https://github.com/flutter/flutter.git /tmp/flutter
+      export PATH="/tmp/flutter/bin:$PATH"
+      flutter config --no-analytics --no-cli-animations
+      flutter precache --web
+      printf 'API_URL=%s\n' "$API_URL" > .env
+      if [ -n "$PUBLIC_CATALOG_URL" ]; then
+        printf 'PUBLIC_CATALOG_URL=%s\n' "$PUBLIC_CATALOG_URL" >> .env
+      fi
+      flutter pub get
+      flutter build web --release
+    staticPublishPath: build/web
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      - key: API_URL
+        value: https://backend-catalog-5t7v.onrender.com
+      - key: PUBLIC_CATALOG_URL
+        sync: false
+      - key: SKIP_INSTALL_DEPS
+        value: "true"
