@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_provider.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/app_button.dart';
@@ -18,6 +20,23 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _rememberUser = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedEmail();
+  }
+
+  Future<void> _loadRememberedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString(CacheKeys.rememberedEmail);
+    if (!mounted || email == null || email.isEmpty) return;
+    setState(() {
+      _emailController.text = email;
+      _rememberUser = true;
+    });
+  }
 
   @override
   void dispose() {
@@ -27,9 +46,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin(AuthProvider authProvider) async {
+    final email = _emailController.text.trim();
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberUser) {
+      await prefs.setString(CacheKeys.rememberedEmail, email);
+    } else {
+      await prefs.remove(CacheKeys.rememberedEmail);
+    }
     setState(() => _isLoading = true);
     await authProvider.login(
-      _emailController.text.trim(),
+      email,
       _passwordController.text.trim(),
     );
     if (mounted) setState(() => _isLoading = false);
@@ -63,7 +89,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   label: AppStrings.passwordLabel,
                   obscureText: true,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: CheckboxListTile(
+                    value: _rememberUser,
+                    onChanged: (value) =>
+                        setState(() => _rememberUser = value ?? false),
+                    title: const Text(AppStrings.rememberUser),
+                    dense: true,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const SizedBox(height: 16),
                 if (authProvider.error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),

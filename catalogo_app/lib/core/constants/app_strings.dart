@@ -7,6 +7,7 @@ abstract final class AppStrings {
   static const String passwordLabel = "Contraseña";
   static const String signIn = "Ingresar";
   static const String invalidCredentials = "Credenciales inválidas";
+  static const String rememberUser = "Recordar usuario";
 
   // Common actions
   static const String create = "Crear";

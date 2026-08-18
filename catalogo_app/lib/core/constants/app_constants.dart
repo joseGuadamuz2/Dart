@@ -6,6 +6,7 @@ abstract final class StorageKeys {
 abstract final class CacheKeys {
   static const String companies = "companies";
   static const String categoryPrefix = "categories_";
+  static const String rememberedEmail = "remembered_email";
 
   static String categoriesFor(String companyId) =>
       "$categoryPrefix$companyId";
