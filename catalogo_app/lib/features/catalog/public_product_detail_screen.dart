@@ -79,11 +79,14 @@ class _PublicProductDetailScreenState
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildGallery(images),
-                const SizedBox(height: 16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 700),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildGallery(images),
+                    const SizedBox(height: 16),
                 Text(
                   product.name,
                   style: const TextStyle(
@@ -162,6 +165,8 @@ class _PublicProductDetailScreenState
                   ),
                 ),
               ],
+                ),
+              ),
             ),
           );
         },
@@ -171,28 +176,42 @@ class _PublicProductDetailScreenState
 
   Widget _buildGallery(List<ProductImage> images) {
     if (images.isEmpty) {
-      return Container(
-        height: 260,
-        color: Colors.grey.shade200,
-        child: const Center(
-          child: Icon(Icons.shopping_bag, size: 80, color: Colors.grey),
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              color: Colors.grey.shade200,
+              child: const Center(
+                child: Icon(Icons.shopping_bag, size: 80, color: Colors.grey),
+              ),
+            ),
+          ),
         ),
       );
     }
 
     return Column(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.network(
-            images[_selectedImage.clamp(0, images.length - 1)].url,
-            height: 260,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => Container(
-              height: 260,
-              color: Colors.grey.shade200,
-              child: const Center(child: Icon(Icons.broken_image, size: 64)),
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Image.network(
+                  images[_selectedImage.clamp(0, images.length - 1)].url,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    color: Colors.grey.shade200,
+                    child: const Center(
+                      child: Icon(Icons.broken_image, size: 64),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -259,10 +278,17 @@ class _DetailSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
-      children: const [
-        Skeleton(
-          height: 260,
-          borderRadius: BorderRadius.all(Radius.circular(12)),
+      children: [
+        Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 480),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Skeleton(
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+              ),
+            ),
+          ),
         ),
         SizedBox(height: 16),
         Skeleton(width: 200, height: 22),
