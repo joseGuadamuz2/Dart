@@ -11,9 +11,13 @@ class AppError implements Exception {
     if (error is AppError) return error;
     if (error is DioException) {
       final status = error.response?.statusCode;
+      final data = error.response?.data;
+      if (data is Map && data["message"] != null) {
+        return AppError(data["message"].toString());
+      }
       switch (status) {
         case 401:
-          return const AppError(AppStrings.sessionExpired);
+          return const AppError(AppStrings.invalidCredentials);
         case 403:
           return const AppError(AppStrings.forbidden);
         case 404:
@@ -31,10 +35,6 @@ class AppError implements Exception {
           return const AppError(AppStrings.connectionError);
         default:
           break;
-      }
-      final data = error.response?.data;
-      if (data is Map && data["message"] != null) {
-        return AppError(data["message"].toString());
       }
     }
     return AppError(error.toString().replaceFirst("Exception: ", ""));

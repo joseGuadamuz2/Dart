@@ -18,6 +18,12 @@ class AuthProvider extends ChangeNotifier {
   AuthUser? get user => _user;
   String? get error => _error;
 
+  void clearError() {
+    if (_error == null) return;
+    _error = null;
+    notifyListeners();
+  }
+
   bool _isExpired(String token) {
     try {
       return JwtDecoder.isExpired(token);

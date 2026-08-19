@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,48 +27,59 @@ void main() async {
   runApp(CatalogoApp(prefs: prefs));
 }
 
-class CatalogoApp extends StatelessWidget {
+class CatalogoApp extends StatefulWidget {
   final SharedPreferences prefs;
-  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
 
-  CatalogoApp({super.key, required this.prefs});
+  const CatalogoApp({super.key, required this.prefs});
+
+  @override
+  State<CatalogoApp> createState() => _CatalogoAppState();
+}
+
+class _CatalogoAppState extends State<CatalogoApp> {
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+  late final ApiClient _apiClient;
+  late final CacheService _cacheService;
+  late final AuthProvider _authProvider;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _apiClient = ApiClient();
+    _cacheService = CacheService(widget.prefs);
+    _authProvider = AuthProvider(AuthService(_apiClient));
+    _apiClient.onUnauthorized = _authProvider.logout;
+    _apiClient.onError = _showGlobalError;
+    _router = createRouter(_authProvider);
+    _authProvider.checkAuth();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final apiClient = ApiClient();
-    final cacheService = CacheService(prefs);
-    final authProvider = AuthProvider(AuthService(apiClient))..checkAuth();
-    apiClient.onUnauthorized = authProvider.logout;
-    apiClient.onError = _showGlobalError;
-
     return MultiProvider(
       providers: [
-        Provider.value(value: apiClient),
-        Provider.value(value: cacheService),
-        ChangeNotifierProvider.value(value: authProvider),
+        Provider.value(value: _apiClient),
+        Provider.value(value: _cacheService),
+        ChangeNotifierProvider.value(value: _authProvider),
         ChangeNotifierProvider(
           create: (_) =>
-              CompanyProvider(CompanyService(apiClient), cacheService),
+              CompanyProvider(CompanyService(_apiClient), _cacheService),
         ),
         ChangeNotifierProvider(
           create: (_) =>
-              CategoryProvider(CategoryService(apiClient), cacheService),
+              CategoryProvider(CategoryService(_apiClient), _cacheService),
         ),
         ChangeNotifierProvider(
-          create: (_) => ProductProvider(ProductService(apiClient)),
+          create: (_) => ProductProvider(ProductService(_apiClient)),
         ),
       ],
-      child: Builder(
-        builder: (context) {
-          final router = createRouter(context.watch<AuthProvider>());
-          return MaterialApp.router(
-            title: AppStrings.appTitle,
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.light,
-            scaffoldMessengerKey: _messengerKey,
-            routerConfig: router,
-          );
-        },
+      child: MaterialApp.router(
+        title: AppStrings.appTitle,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        scaffoldMessengerKey: _messengerKey,
+        routerConfig: _router,
       ),
     );
   }

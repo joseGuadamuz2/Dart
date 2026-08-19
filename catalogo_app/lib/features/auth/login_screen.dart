@@ -37,6 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final prefs = await SharedPreferences.getInstance();
     final email = prefs.getString(CacheKeys.rememberedEmail);
     if (!mounted || email == null || email.isEmpty) return;
+    if (_emailController.text.isNotEmpty) return;
     setState(() {
       _emailController.text = email;
       _rememberUser = true;
@@ -51,6 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin(AuthProvider authProvider) async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
     final email = _emailController.text.trim();
     final prefs = await SharedPreferences.getInstance();
@@ -129,6 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             textInputAction: TextInputAction.next,
                             prefixIcon: const Icon(Icons.mail_outline),
                             validator: emailValidator,
+                            onChanged: (_) => authProvider.clearError(),
                           ),
                           const SizedBox(height: 16),
                           AppTextField(
@@ -138,6 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             textInputAction: TextInputAction.done,
                             prefixIcon: const Icon(Icons.lock_outline),
                             validator: requiredValidator,
+                            onChanged: (_) => authProvider.clearError(),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword

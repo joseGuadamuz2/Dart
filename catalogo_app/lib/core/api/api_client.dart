@@ -34,7 +34,14 @@ class ApiClient {
 
   Future<String>? _refreshFuture;
 
-  ApiClient() : dio = Dio(BaseOptions(baseUrl: baseUrl)) {
+  ApiClient() : dio = Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          connectTimeout: const Duration(seconds: 20),
+          receiveTimeout: const Duration(seconds: 20),
+          sendTimeout: const Duration(seconds: 20),
+        ),
+      ) {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
