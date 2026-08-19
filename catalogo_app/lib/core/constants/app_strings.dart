@@ -1,8 +1,8 @@
 abstract final class AppStrings {
-  static const String appTitle = "Catálogo SaaS";
+  static const String appTitle = "Catálogo Virtual";
 
   // Auth
-  static const String loginTitle = "Catálogo SaaS";
+  static const String loginTitle = "Catálogo Virtual";
   static const String welcomeBack = "¡Bienvenido de nuevo!";
   static const String loginSubtitle =
       "Inicia sesión para gestionar tu catálogo.";
