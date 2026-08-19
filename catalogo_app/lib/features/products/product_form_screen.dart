@@ -8,6 +8,7 @@ import '../../core/errors/app_error.dart';
 import '../../core/models/category.dart';
 import '../../core/models/company.dart';
 import '../../shared/services/image_picker_service.dart';
+import '../../shared/widgets/app_dialog.dart';
 import '../categories/category_service.dart';
 import '../companies/company_service.dart';
 import 'presentation/widgets/product_basic_info.dart';
@@ -231,7 +232,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         }
         await service.create(data);
       }
-      if (mounted) context.pop();
+      if (mounted) {
+        showAppSnackBar(context, AppStrings.savedSuccessfully);
+        context.pop();
+      }
     } catch (e) {
       if (mounted) {
         setState(() {

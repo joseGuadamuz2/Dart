@@ -24,18 +24,20 @@ class ProductBasicInfo extends StatelessWidget {
         AppTextField(
           controller: nameController,
           label: AppStrings.nameLabel,
-          validator: requiredValidator,
+          validator: requiredMaxLengthValidator(100),
         ),
         const SizedBox(height: 16),
         AppTextField(
           controller: codeController,
           label: AppStrings.codeLabel,
+          validator: (v) => maxLengthValidator(50, v),
         ),
         const SizedBox(height: 16),
         AppTextField(
           controller: descriptionController,
           label: AppStrings.descriptionLabel,
           maxLines: 3,
+          validator: (v) => maxLengthValidator(500, v),
         ),
       ],
     );

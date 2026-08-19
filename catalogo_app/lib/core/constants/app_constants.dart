@@ -15,6 +15,7 @@ abstract final class CacheKeys {
 
 abstract final class Validators {
   static final RegExp whatsapp = RegExp(r"^506\d{8}$");
+  static final RegExp email = RegExp(r"^[^@\s]+@[^@\s]+\.[^@\s]+$");
 }
 
 abstract final class Currency {

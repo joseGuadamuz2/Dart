@@ -39,10 +39,6 @@ class AppTextField extends StatelessWidget {
         hintText: hint,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
-        floatingLabelStyle: const TextStyle(
-          color: Color(0xFF2563EB),
-          fontWeight: FontWeight.w600,
-        ),
       ),
       validator: validator,
       keyboardType: keyboardType,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/app_button.dart';
@@ -61,8 +62,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       message: AppStrings.deleteProductMessage,
     );
     if (!confirmed) return;
-    await provider.delete(_product.id);
-    if (mounted) Navigator.pop(context);
+    try {
+      await provider.delete(_product.id);
+      if (mounted) {
+        showAppSnackBar(context, AppStrings.deletedSuccessfully);
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) showAppSnackBar(context, AppError.from(e).message);
+    }
   }
 
   @override
@@ -142,7 +150,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
                 if (hasDescription) ...[
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     AppStrings.descriptionLabel,
                     style: AppTextStyles.section,
                   ),

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import 'core/auth/auth_service.dart';
 import 'core/cache/cache_service.dart';
 import 'core/constants/app_strings.dart';
 import 'core/router/app_router.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'features/categories/category_provider.dart';
 import 'features/categories/category_service.dart';
@@ -26,8 +28,9 @@ void main() async {
 
 class CatalogoApp extends StatelessWidget {
   final SharedPreferences prefs;
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
 
-  const CatalogoApp({super.key, required this.prefs});
+  CatalogoApp({super.key, required this.prefs});
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +38,7 @@ class CatalogoApp extends StatelessWidget {
     final cacheService = CacheService(prefs);
     final authProvider = AuthProvider(AuthService(apiClient))..checkAuth();
     apiClient.onUnauthorized = authProvider.logout;
+    apiClient.onError = _showGlobalError;
 
     return MultiProvider(
       providers: [
@@ -60,10 +64,27 @@ class CatalogoApp extends StatelessWidget {
             title: AppStrings.appTitle,
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light,
+            scaffoldMessengerKey: _messengerKey,
             routerConfig: router,
           );
         },
       ),
     );
+  }
+
+  void _showGlobalError(DioException error, String message) {
+    final response = error.response;
+    final isConnectivity =
+        response == null || error.type == DioExceptionType.connectionError;
+    final isServerError = response != null && response.statusCode != null && response.statusCode! >= 500;
+    if (!isConnectivity && !isServerError) return;
+    _messengerKey.currentState
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.danger,
+          content: Text(message),
+        ),
+      );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,6 +8,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/validators/validators.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 
@@ -18,6 +20,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -48,6 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin(AuthProvider authProvider) async {
+    if (!_formKey.currentState!.validate()) return;
     final email = _emailController.text.trim();
     final prefs = await SharedPreferences.getInstance();
     if (_rememberUser) {
@@ -101,16 +105,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Text(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                          Text(
                             AppStrings.welcomeBack,
                             style: AppTextStyles.title,
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             AppStrings.loginSubtitle,
                             style: AppTextStyles.body,
                             textAlign: TextAlign.center,
@@ -122,6 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             prefixIcon: const Icon(Icons.mail_outline),
+                            validator: emailValidator,
                           ),
                           const SizedBox(height: 16),
                           AppTextField(
@@ -130,6 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             obscureText: _obscurePassword,
                             textInputAction: TextInputAction.done,
                             prefixIcon: const Icon(Icons.lock_outline),
+                            validator: requiredValidator,
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -204,6 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
+                      ),
                     ),
                   ],
                 ),
@@ -241,9 +250,9 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           AppStrings.loginTitle,
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,

@@ -1,10 +1,12 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../constants/app_constants.dart';
+import '../errors/app_error.dart';
 
 class ApiClient {
   static String get baseUrl => dotenv.env['API_URL'] ?? "http://localhost:3000";
@@ -28,6 +30,7 @@ class ApiClient {
   final _storage = const FlutterSecureStorage();
 
   void Function()? onUnauthorized;
+  void Function(DioException error, String message)? onError;
 
   Future<String>? _refreshFuture;
 
@@ -47,15 +50,18 @@ class ApiClient {
           final isAuthEndpoint =
               path == "/auth/login" || path == "/auth/refresh";
           if (status != 401 || isAuthEndpoint) {
+            _reportError(error);
             return handler.next(error);
           }
           if (error.requestOptions.extra['_retried'] == true) {
+            _reportError(error);
             onUnauthorized?.call();
             return handler.next(error);
           }
           try {
             await refreshSession();
           } catch (_) {
+            _reportError(error);
             onUnauthorized?.call();
             return handler.next(error);
           }
@@ -68,11 +74,23 @@ class ApiClient {
             if (retryError.response?.statusCode == 401) {
               onUnauthorized?.call();
             }
+            _reportError(retryError);
             return handler.next(retryError);
           }
         },
       ),
     );
+  }
+
+  void _reportError(DioException error) {
+    final message = AppError.from(error).message;
+    if (kDebugMode) {
+      debugPrint(
+        "[API] ${error.requestOptions.method} ${error.requestOptions.uri} "
+        "-> ${error.response?.statusCode ?? error.type.name}",
+      );
+    }
+    onError?.call(error, message);
   }
 
   Future<String> refreshSession() {

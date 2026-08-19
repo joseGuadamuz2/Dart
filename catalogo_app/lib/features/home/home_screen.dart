@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
 import '../../core/models/company.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -57,7 +58,14 @@ class _HomeScreenState extends State<HomeScreen> {
       message: AppStrings.deleteCompanyMessage,
     );
     if (!confirmed) return;
-    await provider.delete(company.id);
+    try {
+      await provider.delete(company.id);
+      if (mounted) {
+        showAppSnackBar(context, AppStrings.deletedSuccessfully);
+      }
+    } catch (e) {
+      if (mounted) showAppSnackBar(context, AppError.from(e).message);
+    }
   }
 
   Future<void> _onMenuSelected(Company company, String value) async {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 import 'app_text_styles.dart';
@@ -12,15 +13,26 @@ abstract final class AppTheme {
           onPrimary: Colors.white,
           primaryContainer: AppColors.primaryContainer,
           onPrimaryContainer: AppColors.onPrimaryContainer,
-          secondary: AppColors.primaryDark,
+          secondary: AppColors.secondary,
+          onSecondary: Colors.white,
+          secondaryContainer: AppColors.secondaryContainer,
+          onSecondaryContainer: AppColors.onSecondaryContainer,
+          tertiary: AppColors.accent,
+          onTertiary: Colors.white,
+          tertiaryContainer: AppColors.accentContainer,
+          onTertiaryContainer: AppColors.onAccentContainer,
           surface: AppColors.surface,
           onSurface: AppColors.textPrimary,
+          error: AppColors.danger,
+          onError: Colors.white,
+          errorContainer: AppColors.dangerContainer,
+          onErrorContainer: AppColors.onDangerContainer,
           outline: AppColors.border,
         ),
         scaffoldBackgroundColor: AppColors.background,
         splashFactory: InkSparkle.splashFactory,
 
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           centerTitle: false,
           backgroundColor: AppColors.background,
           surfaceTintColor: Colors.transparent,
@@ -31,7 +43,7 @@ abstract final class AppTheme {
         navigationBarTheme: NavigationBarThemeData(
           indicatorColor: AppColors.primaryContainer,
           labelTextStyle: WidgetStateProperty.all(
-            const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
           ),
         ),
 
@@ -60,6 +72,10 @@ abstract final class AppTheme {
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           hintStyle: const TextStyle(color: AppColors.textMuted),
           labelStyle: const TextStyle(color: AppColors.textSecondary),
+          floatingLabelStyle: GoogleFonts.poppins(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w600,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,
@@ -92,7 +108,7 @@ abstract final class AppTheme {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
-            textStyle: const TextStyle(
+            textStyle: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
@@ -107,7 +123,7 @@ abstract final class AppTheme {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
-            textStyle: const TextStyle(
+            textStyle: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
@@ -122,7 +138,7 @@ abstract final class AppTheme {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
-            textStyle: const TextStyle(
+            textStyle: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
@@ -131,7 +147,7 @@ abstract final class AppTheme {
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
             foregroundColor: AppColors.primary,
-            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
         ),
 
@@ -142,11 +158,11 @@ abstract final class AppTheme {
           ),
           backgroundColor: AppColors.surface,
           selectedColor: AppColors.primaryContainer,
-          labelStyle: const TextStyle(
+          labelStyle: GoogleFonts.inter(
             fontSize: 13,
             color: AppColors.textPrimary,
           ),
-          secondaryLabelStyle: const TextStyle(
+          secondaryLabelStyle: GoogleFonts.inter(
             fontSize: 13,
             color: AppColors.onPrimaryContainer,
             fontWeight: FontWeight.w600,
@@ -156,7 +172,10 @@ abstract final class AppTheme {
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.textPrimary,
-          contentTextStyle: const TextStyle(color: Colors.white),
+          contentTextStyle: GoogleFonts.inter(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -199,11 +218,16 @@ abstract final class AppTheme {
           ),
         ),
 
-        textTheme: const TextTheme(
+        textTheme: TextTheme(
+          displaySmall: AppTextStyles.title,
+          headlineMedium: AppTextStyles.title,
           titleLarge: AppTextStyles.title,
           titleMedium: AppTextStyles.heading,
+          titleSmall: AppTextStyles.section,
+          bodyLarge: AppTextStyles.body,
           bodyMedium: AppTextStyles.body,
           bodySmall: AppTextStyles.caption,
+          labelLarge: AppTextStyles.label,
         ),
       );
 }

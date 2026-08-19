@@ -9,6 +9,7 @@ import '../../core/models/category.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/validators/validators.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_dialog.dart';
 import '../../shared/widgets/app_text_field.dart';
 import 'category_service.dart';
 
@@ -58,7 +59,10 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
           widget.companyId!,
         );
       }
-      if (mounted) context.pop();
+      if (mounted) {
+        showAppSnackBar(context, AppStrings.savedSuccessfully);
+        context.pop();
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -86,7 +90,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               AppTextField(
                 controller: _nameController,
                 label: AppStrings.nameLabel,
-                validator: requiredValidator,
+                validator: requiredMaxLengthValidator(100),
               ),
               const SizedBox(height: 24),
               if (_error != null)

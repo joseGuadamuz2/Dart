@@ -23,13 +23,14 @@ class ProductPriceSection extends StatelessWidget {
           controller: priceController,
           label: AppStrings.priceLabel,
           keyboardType: TextInputType.number,
-          validator: numberValidator,
+          validator: positiveNumberValidator,
         ),
         const SizedBox(height: 16),
         AppTextField(
           controller: discountController,
           label: AppStrings.discountLabel,
           keyboardType: TextInputType.number,
+          validator: rangeNumberValidator(0, 100),
         ),
       ],
     );

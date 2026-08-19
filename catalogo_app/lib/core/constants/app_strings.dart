@@ -23,6 +23,12 @@ abstract final class AppStrings {
   static const String linkCopied = "Enlace copiado";
   static const String requiredField = "Requerido";
   static const String invalidValue = "Inválido";
+  static const String emailInvalid = "Correo electrónico inválido";
+  static const String fieldTooLong = "Máximo {n} caracteres";
+  static const String pricePositive = "Debe ser mayor que 0";
+  static const String discountRange = "Debe estar entre 0 y 100";
+  static const String savedSuccessfully = "Guardado correctamente";
+  static const String deletedSuccessfully = "Eliminado correctamente";
   static const String logout = "Cerrar sesión";
   static const String nameLabel = "Nombre";
   static const String retry = "Reintentar";

@@ -11,6 +11,7 @@ import '../../core/models/company.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/validators/validators.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_dialog.dart';
 import '../../shared/widgets/app_text_field.dart';
 import 'company_service.dart';
 
@@ -68,7 +69,10 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
           _whatsappController.text.trim(),
         );
       }
-      if (mounted) context.pop();
+      if (mounted) {
+        showAppSnackBar(context, AppStrings.savedSuccessfully);
+        context.pop();
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -110,7 +114,7 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
                   AppTextField(
                     controller: _nameController,
                     label: AppStrings.nameLabel,
-                    validator: requiredValidator,
+                    validator: requiredMaxLengthValidator(100),
                   ),
                   const SizedBox(height: 16),
                   AppTextField(
@@ -124,7 +128,7 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
                   if (_isEditing) ...[
                     const Divider(),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       AppStrings.yourCatalog,
                       style: AppTextStyles.heading,
                     ),

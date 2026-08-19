@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/errors/app_error.dart';
 import '../../core/theme/app_colors.dart';
 import '../companies/company_provider.dart';
 import '../categories/category_provider.dart';
@@ -61,7 +62,14 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
       message: AppStrings.deleteCategoryMessage,
     );
     if (!confirmed) return;
-    await provider.delete(id);
+    try {
+      await provider.delete(id);
+      if (mounted) {
+        showAppSnackBar(context, AppStrings.deletedSuccessfully);
+      }
+    } catch (e) {
+      if (mounted) showAppSnackBar(context, AppError.from(e).message);
+    }
   }
 
   @override
