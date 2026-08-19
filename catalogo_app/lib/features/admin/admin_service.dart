@@ -26,6 +26,18 @@ class AdminService {
     return Map<String, dynamic>.from(response.data);
   }
 
+  Future<Map<String, dynamic>> updateUser(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _apiClient.dio.patch("/admin/users/$id", data: data);
+    return Map<String, dynamic>.from(response.data);
+  }
+
+  Future<void> deleteUser(String id) async {
+    await _apiClient.dio.delete("/admin/users/$id");
+  }
+
   Future<List<Map<String, dynamic>>> listLicenses() async {
     final response = await _apiClient.dio.get("/admin/licenses");
     final data = ApiClient.extractList(response.data);
@@ -35,6 +47,19 @@ class AdminService {
   Future<Map<String, dynamic>> createLicense(Map<String, dynamic> data) async {
     final response = await _apiClient.dio.post("/admin/licenses", data: data);
     return Map<String, dynamic>.from(response.data);
+  }
+
+  Future<Map<String, dynamic>> updateLicense(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final response =
+        await _apiClient.dio.patch("/admin/licenses/$id", data: data);
+    return Map<String, dynamic>.from(response.data);
+  }
+
+  Future<void> deleteLicense(String id) async {
+    await _apiClient.dio.delete("/admin/licenses/$id");
   }
 
   Future<List<Category>> catalogCategories(String companyId) async {

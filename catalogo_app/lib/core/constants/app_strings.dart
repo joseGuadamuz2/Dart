@@ -24,6 +24,7 @@ abstract final class AppStrings {
   static const String requiredField = "Requerido";
   static const String invalidValue = "Inválido";
   static const String emailInvalid = "Correo electrónico inválido";
+  static const String passwordMinLength = "Mínimo 8 caracteres";
   static const String fieldTooLong = "Máximo {n} caracteres";
   static const String pricePositive = "Debe ser mayor que 0";
   static const String discountRange = "Debe estar entre 0 y 100";
@@ -124,13 +125,32 @@ abstract final class AppStrings {
   static const String adminUsers = "Usuarios";
   static const String adminLicenses = "Licencias";
   static const String createUser = "Crear usuario";
+  static const String editUser = "Editar usuario";
   static const String createLicense = "Crear licencia";
+  static const String editLicense = "Editar licencia";
   static const String roleLabel = "Rol";
   static const String firstNameLabel = "Nombre";
   static const String lastNameLabel = "Apellido";
   static const String tenantIdLabel = "Tenant ID";
   static const String maxCompaniesLabel = "Máx. empresas";
   static const String maxProductsLabel = "Máx. productos";
+  static const String licenseLabel = "Licencia";
+  static const String noLicense = "Sin licencia";
+  static const String birthDateLabel = "Fecha de nacimiento";
+  static const String expiresAtLabel = "Expira";
+  static const String noExpiration = "Sin expiración";
+  static const String assignLicense = "Asignar licencia";
+  static const String activeLabel = "Activo";
+  static const String inactiveLabel = "Inactivo";
+  static const String activate = "Activar";
+  static const String deactivate = "Desactivar";
+  static const String isEnabledLabel = "Habilitado";
+  static const String deleteUserTitle = "Eliminar usuario";
+  static const String deleteUserMessage =
+      "¿Seguro que deseas eliminar este usuario?";
+  static const String deleteLicenseTitle = "Eliminar licencia";
+  static const String deleteLicenseMessage =
+      "¿Seguro que deseas eliminar esta licencia?";
 
   // Home
   static const String greeting = "Hola, {name}";
