@@ -1,28 +1,40 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../product_model.dart';
 
+class PendingImage {
+  final XFile file;
+  bool isMain;
+
+  PendingImage(this.file, {this.isMain = false});
+}
+
 class ProductImagesSection extends StatelessWidget {
   final bool isEditing;
   final bool isUploading;
   final List<ProductImage> images;
-  final List<String> pendingImageUrls;
-  final VoidCallback onUpload;
+  final List<PendingImage> pendingImages;
+  final VoidCallback onPick;
   final void Function(ProductImage image) onSetMain;
   final void Function(ProductImage image) onDeleteImage;
-  final void Function(String url) onDeletePending;
+  final void Function(PendingImage image) onSetMainPending;
+  final void Function(PendingImage image) onDeletePending;
 
   const ProductImagesSection({
     super.key,
     required this.isEditing,
     required this.isUploading,
     required this.images,
-    required this.pendingImageUrls,
-    required this.onUpload,
+    required this.pendingImages,
+    required this.onPick,
     required this.onSetMain,
     required this.onDeleteImage,
+    required this.onSetMainPending,
     required this.onDeletePending,
   });
 
@@ -31,21 +43,21 @@ class ProductImagesSection extends StatelessWidget {
     final items = <Widget>[];
 
     if (isEditing) {
-      for (var i = 0; i < images.length; i++) {
-        items.add(_ImageTile(
-          url: images[i].url,
-          isMain: images[i].isMain,
-          mainEnabled: !images[i].isMain,
-          onSetMain: () => onSetMain(images[i]),
-          onDelete: () => onDeleteImage(images[i]),
+      for (final image in images) {
+        items.add(_ImageTile.network(
+          url: image.url,
+          isMain: image.isMain,
+          onSetMain: image.isMain ? null : () => onSetMain(image),
+          onDelete: () => onDeleteImage(image),
         ));
       }
     } else {
-      for (final url in pendingImageUrls) {
-        items.add(_ImageTile(
-          url: url,
-          isMain: false,
-          onDelete: () => onDeletePending(url),
+      for (final pending in pendingImages) {
+        items.add(_ImageTile.file(
+          file: pending.file,
+          isMain: pending.isMain,
+          onSetMain: pending.isMain ? null : () => onSetMainPending(pending),
+          onDelete: () => onDeletePending(pending),
         ));
       }
     }
@@ -67,7 +79,7 @@ class ProductImagesSection extends StatelessWidget {
           ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
-          onPressed: isUploading ? null : onUpload,
+          onPressed: isUploading ? null : onPick,
           icon: isUploading
               ? const SizedBox(
                   width: 16,
@@ -83,19 +95,47 @@ class ProductImagesSection extends StatelessWidget {
 }
 
 class _ImageTile extends StatelessWidget {
-  final String url;
+  final Widget image;
   final bool isMain;
-  final bool mainEnabled;
   final VoidCallback? onSetMain;
   final VoidCallback onDelete;
 
-  const _ImageTile({
-    required this.url,
+  _ImageTile.file({
+    required XFile file,
     required this.isMain,
-    this.mainEnabled = false,
     this.onSetMain,
     required this.onDelete,
-  });
+  }) : image = Image.file(
+          File(file.path),
+          width: 100,
+          height: 100,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => Container(
+            width: 100,
+            height: 100,
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.broken_image),
+          ),
+        );
+
+  _ImageTile.network({
+    required String url,
+    required this.isMain,
+    this.onSetMain,
+    required this.onDelete,
+  }) : image = Image.network(
+          url,
+          width: 100,
+          height: 100,
+          fit: BoxFit.cover,
+          cacheWidth: 256,
+          errorBuilder: (_, _, _) => Container(
+            width: 100,
+            height: 100,
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.broken_image),
+          ),
+        );
 
   @override
   Widget build(BuildContext context) {
@@ -103,35 +143,22 @@ class _ImageTile extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            url,
-            width: 100,
-            height: 100,
-            fit: BoxFit.cover,
-            cacheWidth: 256,
-            errorBuilder: (_, _, _) => Container(
-              width: 100,
-              height: 100,
-              color: Colors.grey.shade200,
-              child: const Icon(Icons.broken_image),
+          child: image,
+        ),
+        Positioned(
+          top: 4,
+          left: 4,
+          child: IconButton(
+            icon: Icon(
+              isMain ? Icons.star : Icons.star_border,
+              color: Colors.amber,
+              size: 22,
             ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: isMain ? null : onSetMain,
           ),
         ),
-        if (onSetMain != null)
-          Positioned(
-            top: 4,
-            left: 4,
-            child: IconButton(
-              icon: Icon(
-                isMain ? Icons.star : Icons.star_border,
-                color: Colors.amber,
-                size: 22,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: mainEnabled ? onSetMain : null,
-            ),
-          ),
         Positioned(
           top: 4,
           right: 4,

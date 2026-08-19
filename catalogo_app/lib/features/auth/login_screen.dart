@@ -107,11 +107,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           const Text(
                             AppStrings.welcomeBack,
                             style: AppTextStyles.title,
+                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
                           const Text(
                             AppStrings.loginSubtitle,
                             style: AppTextStyles.body,
+                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24),
                           AppTextField(

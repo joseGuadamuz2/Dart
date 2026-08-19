@@ -18,6 +18,14 @@ class ImagePickerService {
     );
   }
 
+  Future<List<XFile>> pickImages() {
+    return ImagePicker().pickMultiImage(
+      maxWidth: 2048,
+      maxHeight: 2048,
+      imageQuality: 85,
+    );
+  }
+
   Future<String> pickAndUpload() async {
     final file = await pickImage();
     if (file == null) throw ImagePickCancelled();

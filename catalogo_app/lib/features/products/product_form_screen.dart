@@ -47,7 +47,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   String? _error;
 
   List<ProductImage> _images = [];
-  final List<String> _pendingImageUrls = [];
+  final List<PendingImage> _pendingImages = [];
 
   late final ApiClient _apiClient;
 
@@ -125,22 +125,50 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     try {
       final url = await ImagePickerService(_apiClient).pickAndUpload();
       if (!mounted) return;
-      if (_isEditing) {
-        final updated =
-            await ProductService(_apiClient).addImage(widget.product!.id, url);
-        if (mounted) setState(() => _images = List.of(updated.images));
-      } else {
-        setState(() => _pendingImageUrls.add(url));
-      }
+      final updated =
+          await ProductService(_apiClient).addImage(widget.product!.id, url);
+      if (mounted) setState(() => _images = List.of(updated.images));
     } on ImagePickCancelled {
       // sin acción
     } catch (e) {
       if (mounted) {
-        setState(() => "${AppStrings.imageUploadError}: ${AppError.from(e).message}");
+        setState(() =>
+            _error = "${AppStrings.imageUploadError}: ${AppError.from(e).message}");
       }
     } finally {
       if (mounted) setState(() => _uploadingImage = false);
     }
+  }
+
+  Future<void> _pickImages() async {
+    try {
+      final files = await ImagePickerService(_apiClient).pickImages();
+      if (files.isEmpty || !mounted) return;
+      setState(() {
+        for (final file in files) {
+          _pendingImages.add(PendingImage(file, isMain: _pendingImages.isEmpty));
+        }
+      });
+    } catch (e) {
+      if (mounted) setState(() => _error = AppError.from(e).message);
+    }
+  }
+
+  void _setMainPending(PendingImage image) {
+    setState(() {
+      for (final pending in _pendingImages) {
+        pending.isMain = identical(pending, image);
+      }
+    });
+  }
+
+  void _deletePending(PendingImage image) {
+    setState(() {
+      _pendingImages.remove(image);
+      if (_pendingImages.isNotEmpty && !_pendingImages.any((p) => p.isMain)) {
+        _pendingImages.first.isMain = true;
+      }
+    });
   }
 
   Future<void> _setMainImage(ProductImage image) async {
@@ -182,13 +210,25 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       if (_descriptionController.text.trim().isNotEmpty)
         "description": _descriptionController.text.trim(),
       if (_categoryId != null) "categoryId": _categoryId,
-      if (_pendingImageUrls.isNotEmpty) "imageUrls": _pendingImageUrls,
     };
     final service = ProductService(_apiClient);
     try {
       if (_isEditing) {
         await service.update(widget.product!.id, data);
       } else {
+        if (_pendingImages.isNotEmpty) {
+          setState(() => _uploadingImage = true);
+          final ordered = <PendingImage>[
+            ..._pendingImages.where((p) => p.isMain),
+            ..._pendingImages.where((p) => !p.isMain),
+          ];
+          final urls = <String>[];
+          for (final pending in ordered) {
+            final bytes = await pending.file.readAsBytes();
+            urls.add(await service.uploadImage(bytes, pending.file.name));
+          }
+          data["imageUrls"] = urls;
+        }
         await service.create(data);
       }
       if (mounted) context.pop();
@@ -196,7 +236,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = AppError.from(e).message;
+          _uploadingImage = false;
+          _error = _pendingImages.isNotEmpty && !_isEditing
+              ? "${AppStrings.imageUploadError}: ${AppError.from(e).message}"
+              : AppError.from(e).message;
         });
       }
     }
@@ -253,12 +296,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 isEditing: _isEditing,
                 isUploading: _uploadingImage,
                 images: _images,
-                pendingImageUrls: _pendingImageUrls,
-                onUpload: _pickAndUpload,
+                pendingImages: _pendingImages,
+                onPick: _isEditing ? _pickAndUpload : _pickImages,
                 onSetMain: _setMainImage,
                 onDeleteImage: _deleteImage,
-                onDeletePending: (url) =>
-                    setState(() => _pendingImageUrls.remove(url)),
+                onSetMainPending: _setMainPending,
+                onDeletePending: _deletePending,
               ),
               const SizedBox(height: 24),
               ProductSubmitButton(
