@@ -34,7 +34,8 @@ class ProductProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      _products = await _service.getProducts(companyId);
+      final all = await _service.getProducts(companyId);
+      _products = all.where((p) => p.companyId == companyId).toList();
     } catch (e) {
       _error = AppError.from(e).message;
     }

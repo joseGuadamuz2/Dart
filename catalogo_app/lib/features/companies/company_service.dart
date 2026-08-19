@@ -8,7 +8,7 @@ class CompanyService {
 
   Future<List<Company>> findMyCompanies() async {
     final response = await _apiClient.dio.get("/owner/companies");
-    final List data = response.data;
+    final data = ApiClient.extractList(response.data);
     return data.map((json) => Company.fromJson(json)).toList();
   }
 

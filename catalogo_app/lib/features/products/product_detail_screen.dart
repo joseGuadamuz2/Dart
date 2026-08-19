@@ -223,6 +223,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 child: Image.network(
                   urls[index],
                   fit: BoxFit.cover,
+                  cacheWidth: 1000,
                   errorBuilder: (_, _, _) => Container(
                     color: Colors.grey.shade200,
                     child: const Center(
@@ -255,6 +256,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           width: 64,
                           height: 64,
                           fit: BoxFit.cover,
+                          cacheWidth: 128,
                           errorBuilder: (_, _, _) => Container(
                             width: 64,
                             height: 64,

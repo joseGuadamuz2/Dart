@@ -14,17 +14,17 @@ class ProductService {
   Future<List<Product>> getProducts(
     String companyId, {
     int? page,
-    int? limit,
+    int? pageSize,
   }) async {
     final response = await _apiClient.dio.get(
       "/owner/products",
       queryParameters: {
         "companyId": companyId,
         "page": ?page,
-        "limit": ?limit,
+        "pageSize": ?pageSize,
       },
     );
-    final List data = response.data;
+    final data = ApiClient.extractList(response.data);
     return data.map((json) => Product.fromJson(json)).toList();
   }
 
@@ -74,7 +74,7 @@ class ProductService {
       "/owner/categories",
       queryParameters: {"companyId": companyId},
     );
-    final List data = response.data;
+    final data = ApiClient.extractList(response.data);
     return data.map((json) => Category.fromJson(json)).toList();
   }
 

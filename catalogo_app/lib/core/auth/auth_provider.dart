@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 import '../errors/app_error.dart';
 import '../models/auth_user.dart';
@@ -17,8 +18,26 @@ class AuthProvider extends ChangeNotifier {
   AuthUser? get user => _user;
   String? get error => _error;
 
+  bool _isExpired(String token) {
+    try {
+      return JwtDecoder.isExpired(token);
+    } catch (_) {
+      return true;
+    }
+  }
+
   Future<void> checkAuth() async {
-    _isAuthenticated = await _authService.isLoggedIn();
+    final token = await _authService.getStoredToken();
+    if (token == null || _isExpired(token)) {
+      if (token == null || !await _authService.refreshSession()) {
+        await _authService.logout();
+        _isAuthenticated = false;
+        _user = null;
+        notifyListeners();
+        return;
+      }
+    }
+    _isAuthenticated = true;
     _user = await _authService.getStoredUser();
     notifyListeners();
   }

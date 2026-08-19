@@ -370,6 +370,7 @@ class _ProductCard extends StatelessWidget {
                     Image.network(
                       image,
                       fit: BoxFit.cover,
+                      cacheWidth: 512,
                       errorBuilder: (_, _, _) =>
                           const _ImagePlaceholder(icon: Icons.broken_image),
                     )

@@ -108,6 +108,7 @@ class _ImageTile extends StatelessWidget {
             width: 100,
             height: 100,
             fit: BoxFit.cover,
+            cacheWidth: 256,
             errorBuilder: (_, _, _) => Container(
               width: 100,
               height: 100,

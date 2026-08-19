@@ -11,7 +11,7 @@ class CategoryService {
       "/owner/categories",
       queryParameters: {"companyId": companyId},
     );
-    final List data = response.data;
+    final data = ApiClient.extractList(response.data);
     return data.map((json) => Category.fromJson(json)).toList();
   }
 

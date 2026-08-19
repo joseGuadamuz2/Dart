@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -16,10 +18,18 @@ class ApiClient {
   static String productUrl(String companyId, String productId) =>
       "$publicCatalogBaseUrl/#/public-catalog/$companyId/products/$productId";
 
+  static List<dynamic> extractList(dynamic data) {
+    if (data is List) return data;
+    if (data is Map && data["data"] is List) return data["data"] as List;
+    return const [];
+  }
+
   final Dio dio;
   final _storage = const FlutterSecureStorage();
 
   void Function()? onUnauthorized;
+
+  Future<String>? _refreshFuture;
 
   ApiClient() : dio = Dio(BaseOptions(baseUrl: baseUrl)) {
     dio.interceptors.add(
@@ -31,13 +41,68 @@ class ApiClient {
           }
           return handler.next(options);
         },
-        onError: (error, handler) {
-          if (error.response?.statusCode == 401) {
-            onUnauthorized?.call();
+        onError: (error, handler) async {
+          final status = error.response?.statusCode;
+          final path = error.requestOptions.path;
+          final isAuthEndpoint =
+              path == "/auth/login" || path == "/auth/refresh";
+          if (status != 401 || isAuthEndpoint) {
+            return handler.next(error);
           }
-          return handler.next(error);
+          if (error.requestOptions.extra['_retried'] == true) {
+            onUnauthorized?.call();
+            return handler.next(error);
+          }
+          try {
+            await refreshSession();
+          } catch (_) {
+            onUnauthorized?.call();
+            return handler.next(error);
+          }
+          try {
+            final opts = error.requestOptions;
+            opts.extra['_retried'] = true;
+            final retry = await dio.fetch(opts);
+            return handler.resolve(retry);
+          } on DioException catch (retryError) {
+            if (retryError.response?.statusCode == 401) {
+              onUnauthorized?.call();
+            }
+            return handler.next(retryError);
+          }
         },
       ),
     );
+  }
+
+  Future<String> refreshSession() {
+    return _refreshFuture ??=
+        _doRefresh().whenComplete(() => _refreshFuture = null);
+  }
+
+  Future<String> _doRefresh() async {
+    final refreshToken = await _storage.read(key: StorageKeys.refreshToken);
+    if (refreshToken == null) {
+      throw DioException(
+        requestOptions: RequestOptions(path: "/auth/refresh"),
+        message: "No hay refresh token",
+      );
+    }
+    final response = await dio.post(
+      "/auth/refresh",
+      data: {"refreshToken": refreshToken},
+    );
+    final accessToken = response.data["accessToken"] as String;
+    final newRefreshToken = response.data["refreshToken"] as String;
+    await _storage.write(key: StorageKeys.token, value: accessToken);
+    await _storage.write(
+      key: StorageKeys.refreshToken,
+      value: newRefreshToken,
+    );
+    final user = response.data["user"];
+    if (user is Map) {
+      await _storage.write(key: StorageKeys.user, value: jsonEncode(user));
+    }
+    return accessToken;
   }
 }

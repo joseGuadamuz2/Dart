@@ -1,5 +1,6 @@
 abstract final class StorageKeys {
   static const String token = "jwt_token";
+  static const String refreshToken = "jwt_refresh_token";
   static const String user = "jwt_user";
 }
 

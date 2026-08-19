@@ -19,14 +19,29 @@ class AuthService {
     );
 
     final token = response.data["accessToken"];
+    final refreshToken = response.data["refreshToken"];
     final user = AuthUser.fromJson(response.data["user"]);
 
     await _storage.write(key: StorageKeys.token, value: token);
+    if (refreshToken != null) {
+      await _storage.write(key: StorageKeys.refreshToken, value: refreshToken);
+    }
     await _storage.write(
       key: StorageKeys.user,
       value: jsonEncode(user.toJson()),
     );
     return user;
+  }
+
+  Future<String?> getStoredToken() => _storage.read(key: StorageKeys.token);
+
+  Future<bool> refreshSession() async {
+    try {
+      await _apiClient.refreshSession();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<AuthUser?> getStoredUser() async {
@@ -41,11 +56,7 @@ class AuthService {
 
   Future<void> logout() async {
     await _storage.delete(key: StorageKeys.token);
+    await _storage.delete(key: StorageKeys.refreshToken);
     await _storage.delete(key: StorageKeys.user);
-  }
-
-  Future<bool> isLoggedIn() async {
-    final token = await _storage.read(key: StorageKeys.token);
-    return token != null;
   }
 }

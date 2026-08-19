@@ -11,13 +11,13 @@ class AdminService {
 
   Future<List<Company>> listCompanies() async {
     final response = await _apiClient.dio.get("/admin/companies");
-    final List data = response.data;
+    final data = ApiClient.extractList(response.data);
     return data.map((json) => Company.fromJson(json)).toList();
   }
 
   Future<List<Map<String, dynamic>>> listUsers() async {
     final response = await _apiClient.dio.get("/admin/users");
-    final List data = response.data;
+    final data = ApiClient.extractList(response.data);
     return data.map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
@@ -28,7 +28,7 @@ class AdminService {
 
   Future<List<Map<String, dynamic>>> listLicenses() async {
     final response = await _apiClient.dio.get("/admin/licenses");
-    final List data = response.data;
+    final data = ApiClient.extractList(response.data);
     return data.map((e) => Map<String, dynamic>.from(e)).toList();
   }
 

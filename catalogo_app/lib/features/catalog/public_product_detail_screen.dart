@@ -224,6 +224,7 @@ class _PublicProductDetailScreenState
                 child: Image.network(
                   images[_selectedImage.clamp(0, images.length - 1)].url,
                   fit: BoxFit.cover,
+                  cacheWidth: 1000,
                   errorBuilder: (_, _, _) => Container(
                     color: Colors.grey.shade200,
                     child: const Center(
@@ -256,6 +257,7 @@ class _PublicProductDetailScreenState
                           width: 64,
                           height: 64,
                           fit: BoxFit.cover,
+                          cacheWidth: 128,
                           errorBuilder: (_, _, _) => Container(
                             width: 64,
                             height: 64,
