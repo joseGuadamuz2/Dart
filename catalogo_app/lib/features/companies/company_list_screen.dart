@@ -7,11 +7,9 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/errors/app_error.dart';
 import '../../core/models/company.dart';
 import '../../core/theme/app_colors.dart';
 import '../companies/company_provider.dart';
-import '../../shared/widgets/app_dialog.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_error_view.dart';
 import '../../shared/widgets/app_loading.dart';
@@ -30,24 +28,6 @@ class _CompanyListScreenState extends State<CompanyListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CompanyProvider>().load();
     });
-  }
-
-  Future<void> _deleteCompany(Company company) async {
-    final provider = context.read<CompanyProvider>();
-    final confirmed = await confirmAction(
-      context,
-      title: AppStrings.deleteCompanyTitle,
-      message: AppStrings.deleteCompanyMessage,
-    );
-    if (!confirmed) return;
-    try {
-      await provider.delete(company.id);
-      if (mounted) {
-        showAppSnackBar(context, AppStrings.deletedSuccessfully);
-      }
-    } catch (e) {
-      if (mounted) showAppSnackBar(context, AppError.from(e).message);
-    }
   }
 
   Future<void> _copyLink(Company company) async {
@@ -75,8 +55,6 @@ class _CompanyListScreenState extends State<CompanyListScreen> {
         );
       case "copy":
         await _copyLink(company);
-      case "delete":
-        await _deleteCompany(company);
     }
   }
 
@@ -179,10 +157,6 @@ class _CompanyListScreenState extends State<CompanyListScreen> {
                   PopupMenuItem(
                     value: "copy",
                     child: Text(AppStrings.copyLink),
-                  ),
-                  PopupMenuItem(
-                    value: "delete",
-                    child: Text(AppStrings.delete),
                   ),
                 ],
               ),

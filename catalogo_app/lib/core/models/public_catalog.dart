@@ -111,11 +111,13 @@ class PublicCompany {
   final String id;
   final String name;
   final String whatsappNumber;
+  final String? logoUrl;
 
   PublicCompany({
     required this.id,
     required this.name,
     required this.whatsappNumber,
+    this.logoUrl,
   });
 
   factory PublicCompany.fromJson(Map<String, dynamic> json) {
@@ -123,6 +125,7 @@ class PublicCompany {
       id: json["id"],
       name: json["name"] ?? "",
       whatsappNumber: json["whatsappNumber"] ?? "",
+      logoUrl: json["logoUrl"],
     );
   }
 }

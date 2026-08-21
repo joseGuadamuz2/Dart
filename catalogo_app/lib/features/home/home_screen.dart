@@ -7,11 +7,9 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/errors/app_error.dart';
 import '../../core/models/company.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../shared/widgets/app_dialog.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_error_view.dart';
 import '../../shared/widgets/app_loading.dart';
@@ -50,24 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ..showSnackBar(const SnackBar(content: Text(AppStrings.linkCopied)));
   }
 
-  Future<void> _deleteCompany(Company company) async {
-    final provider = context.read<CompanyProvider>();
-    final confirmed = await confirmAction(
-      context,
-      title: AppStrings.deleteCompanyTitle,
-      message: AppStrings.deleteCompanyMessage,
-    );
-    if (!confirmed) return;
-    try {
-      await provider.delete(company.id);
-      if (mounted) {
-        showAppSnackBar(context, AppStrings.deletedSuccessfully);
-      }
-    } catch (e) {
-      if (mounted) showAppSnackBar(context, AppError.from(e).message);
-    }
-  }
-
   Future<void> _onMenuSelected(Company company, String value) async {
     switch (value) {
       case "catalog":
@@ -80,8 +60,6 @@ class _HomeScreenState extends State<HomeScreen> {
         final provider = context.read<CompanyProvider>();
         await context.push("/companies/${company.id}/edit", extra: company);
         if (context.mounted) provider.refresh();
-      case "delete":
-        await _deleteCompany(company);
     }
   }
 
@@ -302,9 +280,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
         _menuTile(
           context,
-          AppStrings.manageMyCompanies,
-          Icons.manage_accounts,
-          "/companies",
+          AppStrings.newCompany,
+          Icons.add_business,
+          "/companies/new",
         ),
       ],
     );
@@ -374,10 +352,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     PopupMenuItem(
                       value: "edit",
                       child: Text(AppStrings.configureCompany),
-                    ),
-                    PopupMenuItem(
-                      value: "delete",
-                      child: Text(AppStrings.delete),
                     ),
                   ],
                 ),

@@ -75,16 +75,6 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.companyName ?? "Catálogo"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            tooltip: AppStrings.downloadPdf,
-            onPressed: _openPdf,
-          ),
-        ],
-      ),
       body: FutureBuilder<PublicCatalog>(
         future: _future,
         builder: (context, snapshot) {
@@ -97,81 +87,99 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
             );
           }
           final catalog = snapshot.data!;
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _BrandHeader(company: catalog.company),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _searchController,
-                      onChanged: (value) =>
-                          setState(() => _searchQuery = value.trim()),
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search),
-                        hintText: AppStrings.searchProducts,
-                        isDense: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                floating: true,
+                title: Text(widget.companyName ?? "Catálogo"),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.picture_as_pdf),
+                    tooltip: AppStrings.downloadPdf,
+                    onPressed: _openPdf,
+                  ),
+                ],
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _BrandHeader(company: catalog.company),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _searchController,
+                        onChanged: (value) =>
+                            setState(() => _searchQuery = value.trim()),
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.search),
+                          hintText: AppStrings.searchProducts,
+                          isDense: true,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(12)),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          ChoiceChip(
-                            label: const Text(AppStrings.all),
-                            selected: _categoryId == null,
-                            onSelected: (_) => _selectCategory(null),
-                          ),
-                          for (final c in catalog.categories)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: ChoiceChip(
-                                label: Text(c.name),
-                                selected: _categoryId == c.id,
-                                onSelected: (_) => _selectCategory(c.id),
-                              ),
+                      const SizedBox(height: 12),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            ChoiceChip(
+                              label: const Text(AppStrings.all),
+                              selected: _categoryId == null,
+                              onSelected: (_) => _selectCategory(null),
                             ),
-                        ],
+                            for (final c in catalog.categories)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: ChoiceChip(
+                                  label: Text(c.name),
+                                  selected: _categoryId == c.id,
+                                  onSelected: (_) => _selectCategory(c.id),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: FutureBuilder<List<CatalogProduct>>(
-                  future: _productsFuture,
-                  builder: (context, snap) {
-                    if (snap.connectionState == ConnectionState.waiting) {
-                      return const _ProductsSkeleton();
-                    }
-                    if (snap.hasError) {
-                      return AppErrorView(
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              FutureBuilder<List<CatalogProduct>>(
+                future: _productsFuture,
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const SliverToBoxAdapter(child: _ProductsSkeleton());
+                  }
+                  if (snap.hasError) {
+                    return SliverToBoxAdapter(
+                      child: AppErrorView(
                         message: AppError.from(snap.error!).message,
-                      );
-                    }
-                    var products = snap.data ?? [];
-                    if (_searchQuery.isNotEmpty) {
-                      final q = _searchQuery.toLowerCase();
-                      products = products
-                          .where((p) => p.name.toLowerCase().contains(q))
-                          .toList();
-                    }
-                    if (products.isEmpty) {
-                      return const AppEmptyState(
+                      ),
+                    );
+                  }
+                  var products = snap.data ?? [];
+                  if (_searchQuery.isNotEmpty) {
+                    final q = _searchQuery.toLowerCase();
+                    products = products
+                        .where((p) => p.name.toLowerCase().contains(q))
+                        .toList();
+                  }
+                  if (products.isEmpty) {
+                    return const SliverToBoxAdapter(
+                      child: AppEmptyState(
                         icon: Icons.shopping_bag,
                         title: AppStrings.noProducts,
-                      );
-                    }
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(16),
+                      ),
+                    );
+                  }
+                  return SliverPadding(
+                    padding: const EdgeInsets.all(16),
+                    sliver: SliverGrid(
                       gridDelegate:
                           const SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: 240,
@@ -179,14 +187,16 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
                         crossAxisSpacing: 12,
                         childAspectRatio: 0.62,
                       ),
-                      itemCount: products.length,
-                      itemBuilder: (context, index) => _ProductCard(
-                        companyId: widget.companyId,
-                        product: products[index],
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _ProductCard(
+                          companyId: widget.companyId,
+                          product: products[index],
+                        ),
+                        childCount: products.length,
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
             ],
           );
@@ -222,8 +232,18 @@ class _BrandHeader extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.storefront,
-                size: 30, color: Colors.white),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: (company.logoUrl != null && company.logoUrl!.isNotEmpty)
+                  ? Image.network(
+                      company.logoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Icon(Icons.storefront,
+                          size: 30, color: Colors.white),
+                    )
+                  : const Icon(Icons.storefront,
+                      size: 30, color: Colors.white),
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(

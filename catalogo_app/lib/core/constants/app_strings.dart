@@ -78,6 +78,7 @@ abstract final class AppStrings {
       "Crea tu primera empresa para comenzar a armar tu catálogo.";
   static const String companyLabel = "Empresa";
   static const String whatsappLabel = "WhatsApp (506 + 8 dígitos)";
+  static const String companyLogoLabel = "Logo (opcional)";
   static const String whatsappHint = "50688888888";
   static const String whatsappInvalid = "Debe ser 506 + 8 dígitos";
   static const String yourCatalog = "Tu catálogo";

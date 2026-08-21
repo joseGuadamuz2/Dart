@@ -2,6 +2,7 @@ class Company {
   final String id;
   final String name;
   final String whatsappNumber;
+  final String? logoUrl;
   final String? ownerId;
   final String? licenseId;
   final License? license;
@@ -11,6 +12,7 @@ class Company {
     required this.id,
     required this.name,
     required this.whatsappNumber,
+    this.logoUrl,
     this.ownerId,
     this.licenseId,
     this.license,
@@ -22,6 +24,7 @@ class Company {
       id: json["id"],
       name: json["name"] ?? "",
       whatsappNumber: json["whatsappNumber"] ?? "",
+      logoUrl: json["logoUrl"],
       ownerId: json["ownerId"],
       licenseId: json["licenseId"],
       license: json["license"] != null
@@ -35,6 +38,7 @@ class Company {
         "id": id,
         "name": name,
         "whatsappNumber": whatsappNumber,
+        "logoUrl": logoUrl,
         "ownerId": ownerId,
         "licenseId": licenseId,
         "license": license?.toJson(),
