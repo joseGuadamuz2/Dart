@@ -77,10 +77,12 @@ abstract final class AppStrings {
   static const String noCompaniesHint =
       "Crea tu primera empresa para comenzar a armar tu catálogo.";
   static const String companyLabel = "Empresa";
-  static const String whatsappLabel = "WhatsApp (506 + 8 dígitos)";
+  static const String whatsappLabel = "WhatsApp (8 dígitos)";
   static const String companyLogoLabel = "Logo (opcional)";
-  static const String whatsappHint = "50688888888";
-  static const String whatsappInvalid = "Debe ser 506 + 8 dígitos";
+  static const String sloganLabel = "Eslogan (opcional)";
+  static const String phoneCopied = "Número copiado";
+  static const String whatsappHint = "83388115";
+  static const String whatsappInvalid = "Debe ser un número de 8 dígitos";
   static const String yourCatalog = "Tu catálogo";
   static const String shareCatalogHint =
       "Comparte este enlace con tus clientes:";

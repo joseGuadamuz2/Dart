@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/validators/validators.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/models/company.dart';
 import '../../core/theme/app_colors.dart';
@@ -103,7 +104,7 @@ class _AdminCompaniesScreenState extends State<AdminCompaniesScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      "${AppStrings.whatsAppPrefix}${c.whatsappNumber}",
+                      "${AppStrings.whatsAppPrefix}${displayWhatsapp(c.whatsappNumber)}",
                       style: const TextStyle(fontSize: 12),
                     ),
                   ),

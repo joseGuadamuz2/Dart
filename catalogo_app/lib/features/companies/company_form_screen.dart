@@ -34,6 +34,7 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
   late final ApiClient _apiClient;
   late final TextEditingController _nameController;
   late final TextEditingController _whatsappController;
+  late final TextEditingController _taglineController;
   bool _isLoading = false;
   bool _isDeleting = false;
   String? _error;
@@ -48,7 +49,10 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
     _apiClient = context.read<ApiClient>();
     _nameController = TextEditingController(text: widget.company?.name ?? "");
     _whatsappController = TextEditingController(
-      text: widget.company?.whatsappNumber ?? "",
+      text: displayWhatsapp(widget.company?.whatsappNumber ?? ""),
+    );
+    _taglineController = TextEditingController(
+      text: widget.company?.tagline ?? "",
     );
   }
 
@@ -56,6 +60,7 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
   void dispose() {
     _nameController.dispose();
     _whatsappController.dispose();
+    _taglineController.dispose();
     super.dispose();
   }
 
@@ -96,15 +101,17 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
         await service.update(
           widget.company!.id,
           name: _nameController.text.trim(),
-          whatsappNumber: _whatsappController.text.trim(),
+          whatsappNumber: normalizeWhatsapp(_whatsappController.text),
           logoUrl: logoUrl,
           removeLogo: _pendingLogo == null && _logoRemoved,
+          tagline: _taglineController.text.trim(),
         );
       } else {
         await service.create(
           _nameController.text.trim(),
-          _whatsappController.text.trim(),
+          normalizeWhatsapp(_whatsappController.text),
           logoUrl: logoUrl,
+          tagline: _taglineController.text.trim(),
         );
       }
       if (mounted) {
@@ -264,6 +271,12 @@ class _CompanyFormScreenState extends State<CompanyFormScreen> {
                     hint: AppStrings.whatsappHint,
                     keyboardType: TextInputType.phone,
                     validator: whatsappValidator,
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    controller: _taglineController,
+                    label: AppStrings.sloganLabel,
+                    validator: (v) => maxLengthValidator(150, v),
                   ),
                   const SizedBox(height: 24),
                   if (_isEditing) ...[

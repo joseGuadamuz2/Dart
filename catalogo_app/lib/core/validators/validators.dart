@@ -50,8 +50,27 @@ String? Function(String?) rangeNumberValidator(num min, num max) {
 
 String? whatsappValidator(String? value) {
   if (value == null || value.trim().isEmpty) return AppStrings.requiredField;
-  if (!Validators.whatsapp.hasMatch(value.trim())) {
+  final v = value.trim();
+  final isValid = Validators.whatsappLocal.hasMatch(v) ||
+      Validators.whatsapp.hasMatch(v);
+  if (!isValid) {
     return AppStrings.whatsappInvalid;
   }
   return null;
+}
+
+String normalizeWhatsapp(String value) {
+  final v = value.trim();
+  return Validators.whatsappLocal.hasMatch(v) ? "506$v" : v;
+}
+
+String displayWhatsapp(String value) {
+  final v = value.trim();
+  return Validators.whatsapp.hasMatch(v) ? v.substring(3) : v;
+}
+
+String formatWhatsapp(String value) {
+  final v = value.trim();
+  if (!Validators.whatsapp.hasMatch(v)) return v;
+  return "+506 ${v.substring(3, 7)}-${v.substring(7)}";
 }

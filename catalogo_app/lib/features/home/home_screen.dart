@@ -10,6 +10,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/models/company.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/validators/validators.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_error_view.dart';
 import '../../shared/widgets/app_loading.dart';
@@ -322,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 2),
                       Text(
-                        "${AppStrings.whatsAppPrefix}${company.whatsappNumber}",
+                        "${AppStrings.whatsAppPrefix}${displayWhatsapp(company.whatsappNumber)}",
                         style: AppTextStyles.caption,
                       ),
                     ],

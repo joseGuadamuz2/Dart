@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -9,6 +10,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/models/public_catalog.dart';
+import '../../core/validators/validators.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_error_view.dart';
@@ -211,6 +213,14 @@ class _BrandHeader extends StatelessWidget {
 
   const _BrandHeader({required this.company});
 
+  Future<void> _copyPhone(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await Clipboard.setData(ClipboardData(text: company.whatsappNumber));
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text(AppStrings.phoneCopied)));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -225,26 +235,7 @@ class _BrandHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: (company.logoUrl != null && company.logoUrl!.isNotEmpty)
-                  ? Image.network(
-                      company.logoUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const Icon(Icons.storefront,
-                          size: 30, color: Colors.white),
-                    )
-                  : const Icon(Icons.storefront,
-                      size: 30, color: Colors.white),
-            ),
-          ),
+          _buildLogo(),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -258,15 +249,83 @@ class _BrandHeader extends StatelessWidget {
                     color: Colors.white,
                   ),
                 ),
-                if (company.whatsappNumber.isNotEmpty)
+                if (company.tagline != null &&
+                    company.tagline!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 2),
                   Text(
-                    "WhatsApp: ${company.whatsappNumber}",
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                    company.tagline!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
                   ),
+                ],
+                if (company.whatsappNumber.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  InkWell(
+                    onTap: () => _copyPhone(context),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.chat,
+                              size: 15, color: Color(0xFF25D366)),
+                          const SizedBox(width: 6),
+                          Text(
+                            formatWhatsapp(company.whatsappNumber),
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLogo() {
+    final logoUrl = company.logoUrl;
+    return Container(
+      width: 56,
+      height: 56,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: (logoUrl != null && logoUrl.isNotEmpty)
+            ? Image.network(
+                logoUrl,
+                fit: BoxFit.cover,
+                width: 56,
+                height: 56,
+                errorBuilder: (_, _, _) => _buildInitials(),
+              )
+            : _buildInitials(),
+      ),
+    );
+  }
+
+  Widget _buildInitials() {
+    return Text(
+      company.name.isNotEmpty ? company.name[0].toUpperCase() : "?",
+      style: const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
       ),
     );
   }

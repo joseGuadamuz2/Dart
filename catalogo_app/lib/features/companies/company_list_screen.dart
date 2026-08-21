@@ -9,6 +9,7 @@ import '../../core/auth/auth_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/models/company.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/validators/validators.dart';
 import '../companies/company_provider.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_error_view.dart';
@@ -139,7 +140,7 @@ class _CompanyListScreenState extends State<CompanyListScreen> {
                 ),
               ),
               subtitle: Text(
-                "${AppStrings.whatsAppPrefix}${c.whatsappNumber}",
+                "${AppStrings.whatsAppPrefix}${displayWhatsapp(c.whatsappNumber)}",
                 style: const TextStyle(fontSize: 12),
               ),
               trailing: PopupMenuButton<String>(

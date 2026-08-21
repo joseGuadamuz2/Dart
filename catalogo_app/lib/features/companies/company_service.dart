@@ -20,6 +20,7 @@ class CompanyService {
     String name,
     String whatsappNumber, {
     String? logoUrl,
+    String? tagline,
   }) async {
     final response = await _apiClient.dio.post(
       "/owner/companies",
@@ -27,6 +28,7 @@ class CompanyService {
         "name": name,
         "whatsappNumber": whatsappNumber,
         "logoUrl": ?logoUrl,
+        "tagline": ?tagline,
       },
     );
     return Company.fromJson(response.data);
@@ -39,6 +41,7 @@ class CompanyService {
     bool? isEnabled,
     String? logoUrl,
     bool removeLogo = false,
+    String? tagline,
   }) async {
     final response = await _apiClient.dio.patch(
       "/owner/companies/$id",
@@ -47,6 +50,7 @@ class CompanyService {
         "whatsappNumber": ?whatsappNumber,
         "isEnabled": ?isEnabled,
         if (removeLogo) "logoUrl": null else "logoUrl": ?logoUrl,
+        "tagline": ?tagline,
       },
     );
     return Company.fromJson(response.data);
