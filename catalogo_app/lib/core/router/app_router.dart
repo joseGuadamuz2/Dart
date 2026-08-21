@@ -47,14 +47,14 @@ GoRouter createRouter(AuthProvider authProvider) {
         builder: (context, state) => const ProductListScreen(),
       ),
       GoRoute(
-        path: "/products/:id",
-        builder: (context, state) =>
-            ProductDetailScreen(product: state.extra as Product),
-      ),
-      GoRoute(
         path: "/products/new",
         builder: (context, state) =>
             ProductFormScreen(companyId: state.extra as String?),
+      ),
+      GoRoute(
+        path: "/products/:id",
+        builder: (context, state) =>
+            ProductDetailScreen(product: state.extra as Product),
       ),
       GoRoute(
         path: "/products/:id/edit",

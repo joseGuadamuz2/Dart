@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -105,18 +106,32 @@ class _ImageTile extends StatelessWidget {
     required this.isMain,
     this.onSetMain,
     required this.onDelete,
-  }) : image = Image.file(
-          File(file.path),
+  }) : image = _buildFilePreview(file);
+
+  static Widget _buildFilePreview(XFile file) {
+    Widget errorBuilder(_, _, _) => Container(
           width: 100,
           height: 100,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => Container(
-            width: 100,
-            height: 100,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.broken_image),
-          ),
+          color: Colors.grey.shade200,
+          child: const Icon(Icons.broken_image),
         );
+    if (kIsWeb) {
+      return Image.network(
+        file.path,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: errorBuilder,
+      );
+    }
+    return Image.file(
+      File(file.path),
+      width: 100,
+      height: 100,
+      fit: BoxFit.cover,
+      errorBuilder: errorBuilder,
+    );
+  }
 
   _ImageTile.network({
     required String url,

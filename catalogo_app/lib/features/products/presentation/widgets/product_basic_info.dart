@@ -6,13 +6,11 @@ import '../../../../shared/widgets/app_text_field.dart';
 
 class ProductBasicInfo extends StatelessWidget {
   final TextEditingController nameController;
-  final TextEditingController codeController;
   final TextEditingController descriptionController;
 
   const ProductBasicInfo({
     super.key,
     required this.nameController,
-    required this.codeController,
     required this.descriptionController,
   });
 
@@ -25,12 +23,6 @@ class ProductBasicInfo extends StatelessWidget {
           controller: nameController,
           label: AppStrings.nameLabel,
           validator: requiredMaxLengthValidator(100),
-        ),
-        const SizedBox(height: 16),
-        AppTextField(
-          controller: codeController,
-          label: AppStrings.codeLabel,
-          validator: (v) => maxLengthValidator(50, v),
         ),
         const SizedBox(height: 16),
         AppTextField(

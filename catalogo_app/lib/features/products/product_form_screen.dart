@@ -9,6 +9,7 @@ import '../../core/models/category.dart';
 import '../../core/models/company.dart';
 import '../../shared/services/image_picker_service.dart';
 import '../../shared/widgets/app_dialog.dart';
+import '../categories/category_dialog.dart';
 import '../categories/category_service.dart';
 import '../companies/company_service.dart';
 import 'presentation/widgets/product_basic_info.dart';
@@ -34,7 +35,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _priceController;
   late final TextEditingController _discountController;
-  late final TextEditingController _codeController;
   late final TextEditingController _descriptionController;
 
   String? _companyId;
@@ -68,7 +68,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           ? p.discountPercentage.toString()
           : "",
     );
-    _codeController = TextEditingController(text: p?.code ?? "");
     _descriptionController = TextEditingController(text: p?.description ?? "");
     _companyId = widget.companyId ?? p?.companyId;
     _categoryId = p?.categoryId;
@@ -83,7 +82,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _nameController.dispose();
     _priceController.dispose();
     _discountController.dispose();
-    _codeController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -104,18 +102,47 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
   }
 
-  Future<void> _loadCategories() async {
+  Future<void> _loadCategories({String? selectId}) async {
     try {
       final categories =
           await CategoryService(_apiClient).findByCompany(_companyId!);
       if (!mounted) return;
       setState(() {
         _categories = categories;
-        if (widget.product == null) _categoryId = null;
+        final keep = selectId ?? _categoryId;
+        _categoryId = categories.any((c) => c.id == keep) ? keep : null;
       });
     } catch (e) {
       if (mounted) setState(() => _error = AppError.from(e).message);
     }
+  }
+
+  Future<void> _createCategory() async {
+    if (_companyId == null) return;
+    final created = await showCategoryFormDialog(
+      context,
+      apiClient: _apiClient,
+      companyId: _companyId!,
+    );
+    if (created == null || !mounted) return;
+    await _loadCategories(selectId: created.id);
+  }
+
+  Future<void> _editCategory() async {
+    if (_companyId == null || !mounted) return;
+    final selected = await showCategoryPickerDialog(
+      context,
+      categories: _categories,
+    );
+    if (selected == null || !mounted) return;
+    final updated = await showCategoryFormDialog(
+      context,
+      apiClient: _apiClient,
+      companyId: _companyId!,
+      category: selected,
+    );
+    if (updated == null || !mounted) return;
+    await _loadCategories();
   }
 
   Future<void> _pickAndUpload() async {
@@ -206,8 +233,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       "isFeatured": _isFeatured,
       if (_discountController.text.trim().isNotEmpty)
         "discountPercentage": double.parse(_discountController.text.trim()),
-      if (_codeController.text.trim().isNotEmpty)
-        "code": _codeController.text.trim(),
       if (_descriptionController.text.trim().isNotEmpty)
         "description": _descriptionController.text.trim(),
       if (_categoryId != null) "categoryId": _categoryId,
@@ -272,11 +297,15 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   _loadCategories();
                 },
                 onCategoryChanged: (value) => setState(() => _categoryId = value),
+                onCreateCategory:
+                    _companyId == null ? null : _createCategory,
+                onEditCategory: (_companyId == null || _categories.isEmpty)
+                    ? null
+                    : _editCategory,
               ),
               const SizedBox(height: 16),
               ProductBasicInfo(
                 nameController: _nameController,
-                codeController: _codeController,
                 descriptionController: _descriptionController,
               ),
               const SizedBox(height: 16),

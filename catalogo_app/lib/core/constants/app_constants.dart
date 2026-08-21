@@ -21,7 +21,22 @@ abstract final class Validators {
 abstract final class Currency {
   static const String symbol = "₡";
 
-  static String format(double value) => "$symbol${value.toStringAsFixed(2)}";
+  static String format(double value) {
+    final parts = value.toStringAsFixed(2).split(".");
+    final grouped = _groupThousands(parts[0]);
+    final hasCents = parts[1] != "00";
+    return hasCents ? "$symbol$grouped.${parts[1]}" : "$symbol$grouped";
+  }
+
+  static String _groupThousands(String digits) {
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      buffer.write(digits[i]);
+      final remaining = digits.length - i - 1;
+      if (remaining > 0 && remaining % 3 == 0) buffer.write(" ");
+    }
+    return buffer.toString();
+  }
 }
 
 abstract final class PaginationDefaults {

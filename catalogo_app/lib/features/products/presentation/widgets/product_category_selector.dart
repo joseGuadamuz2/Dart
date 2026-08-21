@@ -11,6 +11,8 @@ class ProductCategorySelector extends StatelessWidget {
   final String? categoryId;
   final ValueChanged<String?> onCompanyChanged;
   final ValueChanged<String?> onCategoryChanged;
+  final VoidCallback? onCreateCategory;
+  final VoidCallback? onEditCategory;
 
   const ProductCategorySelector({
     super.key,
@@ -20,6 +22,8 @@ class ProductCategorySelector extends StatelessWidget {
     required this.categoryId,
     required this.onCompanyChanged,
     required this.onCategoryChanged,
+    this.onCreateCategory,
+    this.onEditCategory,
   });
 
   @override
@@ -39,8 +43,28 @@ class ProductCategorySelector extends StatelessWidget {
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: categoryId,
-          decoration:
-              const InputDecoration(labelText: AppStrings.categoryLabel),
+          decoration: InputDecoration(
+            labelText: AppStrings.categoryLabel,
+            suffixIcon: (onEditCategory == null && onCreateCategory == null)
+                ? null
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onEditCategory != null)
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          tooltip: AppStrings.editCategory,
+                          onPressed: onEditCategory,
+                        ),
+                      if (onCreateCategory != null)
+                        IconButton(
+                          icon: const Icon(Icons.add, size: 22),
+                          tooltip: AppStrings.newCategory,
+                          onPressed: onCreateCategory,
+                        ),
+                    ],
+                  ),
+          ),
           items: categories
               .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
               .toList(),
