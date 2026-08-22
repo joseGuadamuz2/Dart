@@ -93,7 +93,6 @@ class _PublicCatalogScreenState extends State<PublicCatalogScreen> {
           return CustomScrollView(
             slivers: [
               SliverAppBar(
-                automaticallyImplyLeading: false,
                 floating: true,
                 title: Text(widget.companyName ?? AppStrings.catalogTitle),
                 actions: [
