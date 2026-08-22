@@ -37,11 +37,12 @@ class ApiClient {
   ApiClient() : dio = Dio(
         BaseOptions(
           baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 20),
-          receiveTimeout: const Duration(seconds: 20),
-          sendTimeout: const Duration(seconds: 20),
+          connectTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 90),
+          sendTimeout: const Duration(seconds: 120),
         ),
       ) {
+    dio.interceptors.add(_RetryInterceptor(dio));
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -129,5 +130,49 @@ class ApiClient {
       await _storage.write(key: StorageKeys.user, value: jsonEncode(user));
     }
     return accessToken;
+  }
+}
+
+class _RetryInterceptor extends Interceptor {
+  _RetryInterceptor(this._dio);
+
+  final Dio _dio;
+
+  static const _maxAttempts = 2;
+  static const _delay = Duration(seconds: 2);
+
+  bool _isRetryable(DioException error) {
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.connectionError:
+        return true;
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.sendTimeout:
+        return error.requestOptions.method.toUpperCase() == "GET";
+      case DioExceptionType.badResponse:
+        final status = error.response?.statusCode ?? 0;
+        return status == 502 || status == 503 || status == 504;
+      default:
+        return false;
+    }
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    final options = err.requestOptions;
+    final attempt = options.extra["_retryCount"] as int? ?? 0;
+    if (options.method.toUpperCase() != "GET" ||
+        attempt >= _maxAttempts ||
+        !_isRetryable(err)) {
+      return handler.next(err);
+    }
+    options.extra["_retryCount"] = attempt + 1;
+    await Future<void>.delayed(_delay);
+    try {
+      final response = await _dio.fetch(options);
+      return handler.resolve(response);
+    } on DioException catch (retryError) {
+      return handler.next(retryError);
+    }
   }
 }
