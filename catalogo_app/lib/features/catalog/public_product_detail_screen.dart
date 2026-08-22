@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/constants/app_constants.dart';
@@ -11,6 +11,7 @@ import '../../core/models/public_catalog.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_error_view.dart';
 import '../../shared/widgets/skeleton.dart';
+import '../../shared/widgets/whatsapp_button.dart';
 import 'catalog_service.dart';
 
 class PublicProductDetailScreen extends StatefulWidget {
@@ -42,24 +43,28 @@ class _PublicProductDetailScreenState
         .getProduct(widget.companyId, widget.productId);
   }
 
-  Future<void> _openWhatsApp(CatalogProduct product) async {
-    if (product.whatsappLink.isEmpty) return;
-    final uri = Uri.parse(product.whatsappLink);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("No se pudo abrir el enlace")),
-        );
-      }
-    }
+  void _share(CatalogProduct product) {
+    Share.share(
+      AppStrings.shareProductText
+          .replaceFirst("{name}", product.name)
+          .replaceFirst(
+            "{url}",
+            ApiClient.productUrl(widget.companyId, widget.productId),
+          ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                onPressed: () => context.pop(),
+              )
+            : null,
         title: Text(widget.companyName ?? AppStrings.productDetail),
       ),
       body: FutureBuilder<CatalogProduct>(
@@ -74,139 +79,204 @@ class _PublicProductDetailScreenState
             );
           }
           final product = snapshot.data!;
-          final images = product.images.isNotEmpty
-              ? product.images
-              : [if (product.imageUrl != null) _fakeImage(product.imageUrl!)];
-          final hasDiscount = product.discountPercentage > 0;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 700),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildGallery(images),
-                    const SizedBox(height: 16),
-                Text(
-                  product.name,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                if (product.code.isNotEmpty)
-                  Text(
-                    "${AppStrings.codeLabel}: ${product.code}",
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                if (product.category != null)
-                  Text(
-                    product.category!.name,
-                    style: const TextStyle(color: AppColors.textMuted),
-                  ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      Currency.format(product.finalPrice),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: hasDiscount ? AppColors.success : AppColors.primary,
-                      ),
-                    ),
-                    if (hasDiscount) ...[
-                      const SizedBox(width: 8),
+          return Scaffold(
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 700),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildGallery(product),
+                      const SizedBox(height: 20),
+                      if (product.category != null) ...[
+                        Text(
+                          product.category!.name.toUpperCase(),
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
                       Text(
-                        Currency.format(product.price),
+                        product.name,
                         style: const TextStyle(
-                          decoration: TextDecoration.lineThrough,
-                          color: AppColors.textMuted,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                          letterSpacing: -0.5,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                    ],
-                  ],
-                ),
-                if (product.description != null &&
-                    product.description!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    "Descripción",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    product.description!,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-                if (product.whatsappLink.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () => _openWhatsApp(product),
-                      icon: const Icon(Icons.chat),
-                      label: const Text(AppStrings.consultWhatsApp),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Share.share(
-                        AppStrings.shareProductText
-                            .replaceFirst("{name}", product.name)
-                            .replaceFirst(
-                              "{url}",
-                              ApiClient.productUrl(
-                                widget.companyId,
-                                widget.productId,
+                      if (product.code.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          "${AppStrings.codeLabel}: ${product.code}",
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 14),
+                      _PriceSection(product: product),
+                      if (!product.isAvailable) ...[
+                        const SizedBox(height: 14),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.warningContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_outline_rounded,
+                                  size: 16, color: AppColors.warning),
+                              SizedBox(width: 8),
+                              Text(
+                                AppStrings.productUnavailable,
+                                style: TextStyle(
+                                  color: AppColors.onWarningContainer,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                      );
-                    },
-                    icon: const Icon(Icons.share),
-                    label: const Text(AppStrings.shareProduct),
+                            ],
+                          ),
+                        ),
+                      ],
+                      if (product.description != null &&
+                          product.description!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        const Text(
+                          "Descripción",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          product.description!,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                            height: 1.55,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ),
-              ],
                 ),
               ),
             ),
+            bottomNavigationBar: _buildBottomBar(product),
           );
         },
       ),
     );
   }
 
-  Widget _buildGallery(List<ProductImage> images) {
-    if (images.isEmpty) {
-      return Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: Container(
-              color: Colors.grey.shade200,
-              child: const Center(
-                child: Icon(Icons.shopping_bag, size: 80, color: Colors.grey),
-              ),
+  Widget _buildBottomBar(CatalogProduct product) {
+    final canOrder = product.whatsappLink.isNotEmpty && product.isAvailable;
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (canOrder) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: AppColors.whatsappGreen,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Text(
+                  AppStrings.fastReplyWhatsapp,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 10),
+          ],
+          Row(
+            children: [
+              Material(
+                color: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                child: InkWell(
+                  onTap: () => _share(product),
+                  customBorder: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Tooltip(
+                    message: AppStrings.shareProduct,
+                    child: SizedBox(
+                      width: 52,
+                      height: 52,
+                      child: Icon(
+                        Icons.ios_share_rounded,
+                        size: 20,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: WhatsappButton(
+                  link: canOrder ? product.whatsappLink : null,
+                  label:
+                      canOrder ? AppStrings.consultWhatsApp : AppStrings.outOfStock,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGallery(CatalogProduct product) {
+    final images = product.images.isNotEmpty
+        ? product.images
+        : [if (product.imageUrl != null) ProductImage(id: "main", url: product.imageUrl!, isMain: true)];
+
+    if (images.isEmpty) {
+      return AspectRatio(
+        aspectRatio: 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Center(
+            child: Icon(Icons.image_outlined, size: 64, color: AppColors.textMuted),
           ),
         ),
       );
@@ -214,71 +284,67 @@ class _PublicProductDetailScreenState
 
     return Column(
       children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: Image.network(
-                  images[_selectedImage.clamp(0, images.length - 1)].url,
-                  fit: BoxFit.cover,
-                  cacheWidth: 1000,
-                  errorBuilder: (_, _, _) => Container(
-                    color: Colors.grey.shade200,
-                    child: const Center(
-                      child: Icon(Icons.broken_image, size: 64),
-                    ),
-                  ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: ColoredBox(
+              color: AppColors.surfaceMuted,
+              child: Image.network(
+                images[_selectedImage.clamp(0, images.length - 1)].url,
+                fit: BoxFit.cover,
+                cacheWidth: 1000,
+                errorBuilder: (_, _, _) => const Center(
+                  child: Icon(Icons.broken_image_outlined,
+                      size: 56, color: AppColors.textMuted),
                 ),
               ),
             ),
           ),
         ),
         if (images.length > 1) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           SizedBox(
             height: 64,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               itemCount: images.length,
               separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final selected = index == _selectedImage;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedImage = index),
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selected
+                            ? AppColors.whatsappDark
+                            : Colors.transparent,
+                        width: 2.5,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(9.5),
+                      child: ColoredBox(
+                        color: AppColors.surfaceMuted,
                         child: Image.network(
                           images[index].url,
-                          width: 64,
-                          height: 64,
+                          width: 59,
+                          height: 59,
                           fit: BoxFit.cover,
                           cacheWidth: 128,
-                          errorBuilder: (_, _, _) => Container(
-                            width: 64,
-                            height: 64,
-                            color: Colors.grey.shade200,
-                            child: const Icon(Icons.broken_image, size: 24),
+                          errorBuilder: (_, _, _) => const SizedBox(
+                            width: 59,
+                            height: 59,
+                            child: Icon(Icons.broken_image_outlined,
+                                size: 20, color: AppColors.textMuted),
                           ),
                         ),
                       ),
-                      if (selected)
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.primary,
-                                width: 3,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                    ),
                   ),
                 );
               },
@@ -288,9 +354,61 @@ class _PublicProductDetailScreenState
       ],
     );
   }
+}
 
-  ProductImage _fakeImage(String url) =>
-      ProductImage(id: "main", url: url, isMain: true);
+class _PriceSection extends StatelessWidget {
+  final CatalogProduct product;
+
+  const _PriceSection({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasDiscount = product.discountPercentage > 0;
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 10,
+      runSpacing: 6,
+      children: [
+        Text(
+          Currency.format(product.finalPrice),
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.8,
+            height: 1,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        if (hasDiscount) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.discountBadge,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              "-${product.discountPercentage.round()}%",
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 11.5,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          Text(
+            Currency.format(product.price),
+            style: const TextStyle(
+              decoration: TextDecoration.lineThrough,
+              decorationColor: AppColors.textMuted,
+              color: AppColors.textMuted,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 class _DetailSkeleton extends StatelessWidget {
@@ -303,31 +421,31 @@ class _DetailSkeleton extends StatelessWidget {
       children: [
         Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 480),
-            child: AspectRatio(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: const AspectRatio(
               aspectRatio: 1,
               child: Skeleton(
-                borderRadius: BorderRadius.all(Radius.circular(12)),
+                borderRadius: BorderRadius.all(Radius.circular(20)),
               ),
             ),
           ),
         ),
-        SizedBox(height: 16),
-        Skeleton(width: 200, height: 22),
-        SizedBox(height: 8),
-        Skeleton(width: 120, height: 14),
-        SizedBox(height: 12),
-        Skeleton(width: 140, height: 18),
-        SizedBox(height: 16),
-        Skeleton(height: 14),
-        SizedBox(height: 8),
-        Skeleton(height: 14),
-        SizedBox(height: 8),
-        Skeleton(width: 220, height: 14),
-        SizedBox(height: 32),
-        Skeleton(height: 48),
-        SizedBox(height: 12),
-        Skeleton(height: 48),
+        const SizedBox(height: 20),
+        const Skeleton(width: 80, height: 11),
+        const SizedBox(height: 8),
+        const Skeleton(width: 220, height: 22),
+        const SizedBox(height: 6),
+        const Skeleton(width: 120, height: 12),
+        const SizedBox(height: 16),
+        const Skeleton(width: 150, height: 28),
+        const SizedBox(height: 24),
+        const Skeleton(width: 110, height: 14),
+        const SizedBox(height: 10),
+        const Skeleton(height: 14),
+        const SizedBox(height: 8),
+        const Skeleton(height: 14),
+        const SizedBox(height: 8),
+        const Skeleton(width: 240, height: 14),
       ],
     );
   }

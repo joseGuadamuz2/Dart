@@ -295,6 +295,13 @@ class _HomeScreenState extends State<HomeScreen> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.cardShadow,
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -321,10 +328,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: AppTextStyles.heading,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 2),
-                      Text(
-                        "${AppStrings.whatsAppPrefix}${displayWhatsapp(company.whatsappNumber)}",
-                        style: AppTextStyles.caption,
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(Icons.chat_rounded,
+                              size: 13, color: AppColors.whatsappGreen),
+                          const SizedBox(width: 5),
+                          Text(
+                            displayWhatsapp(company.whatsappNumber),
+                            style: AppTextStyles.caption,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -434,6 +448,13 @@ class _HomeScreenState extends State<HomeScreen> {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.cardShadow,
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [

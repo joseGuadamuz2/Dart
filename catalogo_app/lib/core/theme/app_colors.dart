@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  static const Color primary = Color(0xFF2563EB);
-  static const Color primaryDark = Color(0xFF1E40AF);
-  static const Color primaryLight = Color(0xFF93C5FD);
-  static const Color primaryContainer = Color(0xFFDBEAFE);
-  static const Color onPrimaryContainer = Color(0xFF1E3A8A);
+  static const Color primary = Color(0xFF0F172A);
+  static const Color primaryDark = Color(0xFF020617);
+  static const Color primaryLight = Color(0xFFCBD5E1);
+  static const Color primaryContainer = Color(0xFFE2E8F0);
+  static const Color onPrimaryContainer = Color(0xFF0F172A);
 
-  static const Color secondary = Color(0xFF0D9488);
-  static const Color secondaryDark = Color(0xFF0F766E);
-  static const Color secondaryContainer = Color(0xFFCCFBF1);
-  static const Color onSecondaryContainer = Color(0xFF134E4A);
+  static const Color secondary = Color(0xFF128C7E);
+  static const Color secondaryDark = Color(0xFF075E54);
+  static const Color secondaryContainer = Color(0xFFDCFCE7);
+  static const Color onSecondaryContainer = Color(0xFF14532D);
 
   static const Color accent = Color(0xFFF59E0B);
   static const Color accentContainer = Color(0xFFFEF3C7);
@@ -34,7 +34,15 @@ abstract final class AppColors {
   static const Color textMuted = Color(0xFF94A3B8);
   static const Color border = Color(0xFFE2E8F0);
 
-  static const Color primaryGradientTop = Color(0xFF3B82F6);
-  static const Color primaryGradientBottom = Color(0xFF1E40AF);
-  static const Color shadow = Color(0x1A2563EB);
+  static const Color primaryGradientTop = Color(0xFF1E293B);
+  static const Color primaryGradientBottom = Color(0xFF0F172A);
+  static const Color shadow = Color(0x240F172A);
+
+  // Identidad del catálogo público
+  static const Color whatsappGreen = Color(0xFF25D366);
+  static const Color whatsappDark = Color(0xFF128C7E);
+  static const Color inkGradientTop = Color(0xFF1E293B);
+  static const Color inkGradientBottom = Color(0xFF0F172A);
+  static const Color discountBadge = Color(0xFFDC2626);
+  static const Color cardShadow = Color(0x140F172A);
 }

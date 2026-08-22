@@ -109,6 +109,8 @@ abstract final class AppStrings {
   static const String all = "Todos";
   static const String downloadPdf = "Descargar PDF";
   static const String outOfStock = "Agotado";
+  static const String productUnavailable = "Producto no disponible";
+  static const String fastReplyWhatsapp = "Respuesta rápida por WhatsApp";
   static const String consultWhatsApp = "Consultar por WhatsApp";
   static const String shareProduct = "Compartir producto";
   static const String whatsappLinkCopied = "Enlace copiado";

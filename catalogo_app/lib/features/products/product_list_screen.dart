@@ -309,9 +309,10 @@ class _ProductCard extends StatelessWidget {
                       Text(
                         Currency.format(product.finalPrice),
                         style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       if (hasDiscount) ...[
@@ -327,9 +328,9 @@ class _ProductCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.successContainer,
+                            color: AppColors.discountBadge,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -337,7 +338,8 @@ class _ProductCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.onSuccessContainer,
+                              letterSpacing: 0.3,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -413,7 +415,7 @@ class _ProductCard extends StatelessWidget {
   Widget _imagePlaceholder() {
     return Container(
       color: AppColors.surfaceMuted,
-      child: const Icon(Icons.shopping_bag, color: AppColors.textMuted),
+      child: const Icon(Icons.image_outlined, color: AppColors.textMuted),
     );
   }
 }

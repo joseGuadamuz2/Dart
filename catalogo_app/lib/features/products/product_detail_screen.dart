@@ -107,23 +107,46 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     style: AppTextStyles.caption,
                   ),
                 const SizedBox(height: 8),
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 10,
+                  runSpacing: 6,
                   children: [
                     Text(
                       Currency.format(_product.finalPrice),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: hasDiscount ? AppColors.success : AppColors.primary,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.8,
+                        height: 1,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     if (hasDiscount) ...[
-                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.discountBadge,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          "-${_product.discountPercentage.round()}%",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11.5,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
                       Text(
                         Currency.format(_product.price),
                         style: const TextStyle(
                           decoration: TextDecoration.lineThrough,
+                          decorationColor: AppColors.textMuted,
                           color: AppColors.textMuted,
+                          fontSize: 14,
                         ),
                       ),
                     ],
@@ -208,9 +231,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           child: AspectRatio(
             aspectRatio: 1,
             child: Container(
-              color: Colors.grey.shade200,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: const Center(
-                child: Icon(Icons.shopping_bag, size: 80, color: Colors.grey),
+                child: Icon(Icons.image_outlined,
+                    size: 64, color: AppColors.textMuted),
               ),
             ),
           ),
@@ -225,17 +252,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
               child: AspectRatio(
                 aspectRatio: 1,
-                child: Image.network(
-                  urls[index],
-                  fit: BoxFit.cover,
-                  cacheWidth: 1000,
-                  errorBuilder: (_, _, _) => Container(
-                    color: Colors.grey.shade200,
-                    child: const Center(
-                      child: Icon(Icons.broken_image, size: 64),
+                child: ColoredBox(
+                  color: AppColors.surfaceMuted,
+                  child: Image.network(
+                    urls[index],
+                    fit: BoxFit.cover,
+                    cacheWidth: 1000,
+                    errorBuilder: (_, _, _) => const Center(
+                      child: Icon(Icons.broken_image_outlined,
+                          size: 56, color: AppColors.textMuted),
                     ),
                   ),
                 ),
@@ -259,17 +287,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          urls[i],
-                          width: 64,
-                          height: 64,
-                          fit: BoxFit.cover,
-                          cacheWidth: 128,
-                          errorBuilder: (_, _, _) => Container(
+                        child: ColoredBox(
+                          color: AppColors.surfaceMuted,
+                          child: Image.network(
+                            urls[i],
                             width: 64,
                             height: 64,
-                            color: Colors.grey.shade200,
-                            child: const Icon(Icons.broken_image, size: 24),
+                            fit: BoxFit.cover,
+                            cacheWidth: 128,
+                            errorBuilder: (_, _, _) => const SizedBox(
+                              width: 64,
+                              height: 64,
+                              child: Icon(Icons.broken_image_outlined,
+                                  size: 24, color: AppColors.textMuted),
+                            ),
                           ),
                         ),
                       ),
