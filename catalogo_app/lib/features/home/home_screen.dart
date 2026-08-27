@@ -27,9 +27,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CompanyProvider>().load();
-    });
+    final user = context.read<AuthProvider>().user;
+    if (user?.isAdmin != true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<CompanyProvider>().load();
+      });
+    }
   }
 
   Future<void> _shareCatalog(Company company) async {
@@ -82,20 +85,20 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => context.read<CompanyProvider>().refresh(),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (user != null) _buildGreeting(user.fullName, user.email, user.role),
-            const SizedBox(height: 20),
-            if (isAdmin) ...[
-              _buildAdminSection(context),
-              const SizedBox(height: 20),
-            ],
-            _buildCompaniesSection(provider, companies),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          if (user != null) _buildGreeting(user.fullName, user.email, user.role),
+          const SizedBox(height: 20),
+          if (isAdmin) ...[
+            _buildAdminSection(context),
+          ] else ...[
+            RefreshIndicator(
+              onRefresh: () => context.read<CompanyProvider>().refresh(),
+              child: _buildCompaniesSection(provider, companies),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }

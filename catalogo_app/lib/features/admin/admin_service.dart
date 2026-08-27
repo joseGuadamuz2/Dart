@@ -15,6 +15,49 @@ class AdminService {
     return data.map((json) => Company.fromJson(json)).toList();
   }
 
+  Future<Company> createCompany({
+    required String name,
+    required String whatsappNumber,
+    required String ownerId,
+    required String tenantId,
+    String? licenseId,
+  }) async {
+    final response = await _apiClient.dio.post(
+      "/admin/companies",
+      data: {
+        "name": name,
+        "whatsappNumber": whatsappNumber,
+        "ownerId": ownerId,
+        "tenantId": tenantId,
+        "licenseId": ?licenseId,
+      },
+    );
+    return Company.fromJson(response.data);
+  }
+
+  Future<Company> updateCompany(
+    String id, {
+    String? name,
+    String? whatsappNumber,
+    String? licenseId,
+    bool? isEnabled,
+  }) async {
+    final response = await _apiClient.dio.patch(
+      "/admin/companies/$id",
+      data: {
+        "name": ?name,
+        "whatsappNumber": ?whatsappNumber,
+        "licenseId": ?licenseId,
+        "isEnabled": ?isEnabled,
+      },
+    );
+    return Company.fromJson(response.data);
+  }
+
+  Future<void> deleteCompany(String id) async {
+    await _apiClient.dio.delete("/admin/companies/$id");
+  }
+
   Future<List<Map<String, dynamic>>> listUsers() async {
     final response = await _apiClient.dio.get("/admin/users");
     final data = ApiClient.extractList(response.data);

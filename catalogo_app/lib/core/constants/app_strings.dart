@@ -156,6 +156,15 @@ abstract final class AppStrings {
   static const String deleteLicenseTitle = "Eliminar licencia";
   static const String deleteLicenseMessage =
       "¿Seguro que deseas eliminar esta licencia?";
+  static const String createCompanyByAdmin = "Nueva empresa";
+  static const String ownerLabel = "Dueño";
+  static const String selectOwner = "Selecciona el dueño";
+  static const String assignCompanyOwner = "Asignar dueño";
+  static const String viewCatalog = "Ver catálogo";
+  static const String companyTypeLabel = "Empresa";
+  static const String deleteCompanyAdminTitle = "Eliminar empresa";
+  static const String deleteCompanyAdminMessage =
+      "¿Seguro que deseas eliminar esta empresa?";
 
   // Home
   static const String greeting = "Hola, {name}";
