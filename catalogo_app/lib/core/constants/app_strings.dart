@@ -170,4 +170,8 @@ abstract final class AppStrings {
   static const String greeting = "Hola, {name}";
   static const String sectionCompanies = "Mis empresas";
   static const String adminSection = "Administración";
+  static const String licenseExpiresIn =
+      "La licencia vence en {days} día(s)";
+  static const String licenseExpired = "La licencia venció";
+  static const String licenseExpiredOn = "La licencia venció el {date}";
 }

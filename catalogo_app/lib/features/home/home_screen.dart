@@ -376,6 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+          ?_buildLicenseBanner(company),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -404,6 +405,64 @@ class _HomeScreenState extends State<HomeScreen> {
                           )),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget? _buildLicenseBanner(Company company) {
+    final expiresAt = company.license?.expiresAt;
+    if (expiresAt == null) return null;
+
+    final today = DateTime.now();
+    final exp = DateTime(expiresAt.year, expiresAt.month, expiresAt.day);
+    final ref = DateTime(today.year, today.month, today.day);
+    final daysLeft = exp.difference(ref).inDays;
+
+    final licenseName = company.license?.name ?? AppStrings.licenseLabel;
+    String message;
+    Widget? icon;
+    Color bg;
+    Color fg;
+
+    if (daysLeft < 0) {
+      message = "$licenseName: ${AppStrings.licenseExpired}";
+      icon = const Icon(Icons.error_outline, size: 18, color: AppColors.danger);
+      bg = AppColors.dangerContainer;
+      fg = AppColors.onDangerContainer;
+    } else if (daysLeft <= 15) {
+      message = "$licenseName: "
+          "${AppStrings.licenseExpiresIn.replaceFirst("{days}", "$daysLeft")}";
+      icon = const Icon(Icons.hourglass_top,
+          size: 18, color: AppColors.warning);
+      bg = AppColors.warningContainer;
+      fg = AppColors.onWarningContainer;
+    } else {
+      return null;
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          icon,
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: fg,
+              ),
             ),
           ),
         ],
